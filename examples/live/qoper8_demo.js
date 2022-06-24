@@ -6,7 +6,7 @@
     workerLoaderUrl: '../../src/QOper8Worker.min.js',
     logging: true,
     handlersByMessageType: new Map([
-      ['demoMessage', './demoMessage.js']
+      ['demoMessage', '../examples/live/demoMessage.js']
     ])
   });
 
