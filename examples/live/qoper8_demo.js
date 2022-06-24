@@ -1,9 +1,9 @@
 (async () => {
 
-  const {QOper8} = await import('/qoper8/js/QOper8.min.js');
+  const {QOper8} = await import('../src/QOper8.min.js');
 
   let qoper8 = new QOper8({
-    workerLoaderUrl: '../js/QOper8Worker.min.js',
+    workerLoaderUrl: '../src/QOper8Worker.min.js',
     logging: true,
     handlersByMessageType: new Map([
       ['demoMessage', '../demo/demoMessage.js']
