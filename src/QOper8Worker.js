@@ -155,8 +155,8 @@ onmessage = async function(e) {
       let handlerUrl = QOper8Worker.handlersByMessageType.get(obj.type);
       log('fetching ' + handlerUrl);
       try {
-        let {handler} = await import(handlerUrl);
-
+        importScripts(handlerUrl);
+        let handler = self.handler;
         QOper8Worker.handlers.set(obj.type, handler);
         QOper8Worker.emit('handler_imported', {handlerUrl: handlerUrl});
       }
