@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-30 July 2022
+31 July 2022
 
  */
 
@@ -132,7 +132,38 @@ class QOper8 {
   }
 
   startWorker() {
-    let worker = new Worker(this.worker.loaderUrl);
+    let worker;
+    try {
+      // force Firefox to fail to prevent security error
+      // Firefox will successfully start a worker with a cross-origin URL but won't let it then work!
+      if (this.worker.loaderUrl.startsWith('http') && navigator.userAgent.includes('Firefox')) {let x = zzz;}
+
+      worker = new Worker(this.worker.loaderUrl);
+    }
+    catch (e) {
+
+      // Blob URL workaround of cross-origin limitations courtesy of:
+      //  https://benohead.com/blog/2017/12/06/cross-domain-cross-browser-web-workers/
+
+      try {
+        let blob;
+        try {
+          blob = new Blob(["importScripts('" + this.worker.loaderUrl + "');"], { "type": 'application/javascript' });
+        }
+        catch (e1) {
+          let blobBuilder = new (window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder)();
+          blobBuilder.append("importScripts('" + this.worker.loaderUrl + "');");
+          blob = blobBuilder.getBlob('application/javascript');
+        }
+        let url = window.URL || window.webkitURL;
+        let blobUrl = url.createObjectURL(blob);
+        worker = new Worker(blobUrl);
+      }
+      catch (e2) {
+        console.log('*** Cannot load worker URL ' + this.worker.loaderUrl + ' even as blob URL');
+      }
+    }
+
     let q = this;
 
     worker.onmessage = function(e) {
