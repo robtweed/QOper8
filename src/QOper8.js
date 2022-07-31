@@ -22,6 +22,9 @@
  | See the License for the specific language governing permissions and       |
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
+
+30 July 2022
+
  */
 
 class QOper8 {
@@ -68,7 +71,7 @@ class QOper8 {
 
   message(obj, callback) {
     obj.qoper8 = {
-      callback: callback
+      callback: callback || false
     };
     this.addToQueue(obj);
   }
@@ -145,7 +148,7 @@ class QOper8 {
 
       if (q.callbacks.has(worker.id)) {
         let callback = q.callbacks.get(worker.id);
-        callback(res);
+        if (callback) callback(res);
         q.callbacks.delete(worker.id);
       }
 
