@@ -141,7 +141,7 @@ Adding a Message to the queue sets off a chain of events:
 
 2. When the WebWorker process receives the message:
 
-  - it checks the *type* value against the *handlersByMessageType* Map.  If the associated handler method module has not been loaded into the WebWorker
+  - it checks the *type* value against the *handlersByMessageType* Map.  If the associated handler method script has not been loaded into the WebWorker, it is now loaded (using the importScripts method)
 
   - the type-specific Handler Method is invoked, passing the incoming message object as its first argument.
 
@@ -153,16 +153,16 @@ Adding a Message to the queue sets off a chain of events:
 
 So, as you can see, everything related to the WebWorker processes and the message flow between the main process and the WebWorker processes is handled automatically for you by QOper8.  As far as you are concerned, there are just two steps:
 
-- you ceeate a Message Handler module for each of your required message *type*s
+- you ceeate a Message Handler script file for each of your required message *type*s
 
 - you then add objects to the QOper8 queue, specifying the message *type* for each one
 
 
-## The Message Handler Method Module
+## The Message Handler Method Script
 
-QOper8 Message Handler Method modules must conform to a predetermined pattern as follows:
+QOper8 Message Handler Method script files must conform to a predetermined pattern as follows:
 
-      export function handler(messageObj, finished) {
+      self.handler = function(messageObj, finished) {
 
         // your logic for processing the incoming message object 
 
@@ -186,7 +186,7 @@ The *finished()* method is provided for you by the *QOper8Worker* module.  It:
 
 For example:
 
-      export function handler(obj, finished) {
+      self.handler = function(obj, finished) {
 
         // simple example that just echoes back the incoming message
 
@@ -207,7 +207,7 @@ First, let's define the Message Handler Module.  We'll use the example above:
 
 ### myMessage.js
 
-      export function handler(obj, finished) {
+      self.handler = function(obj, finished) {
 
         // simple example that just echoes back the incoming message
 
