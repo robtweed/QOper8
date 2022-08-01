@@ -1,4 +1,4 @@
-export function handler(obj, finished) {
+self.handler = function(obj, finished) {
 
   let worker = this;
 
