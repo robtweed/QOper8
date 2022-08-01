@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-31 July 2022
+1 August 2022
 
  */
 
@@ -40,7 +40,7 @@ class QOper8 {
 
     this.name = 'QOper8';
     this.build = '2.1';
-    this.buildDate = '31 July 2022';
+    this.buildDate = '1 August 2022';
     this.logging = obj.logging || false;
     this.queue = [];
     this.workers = new Map();
