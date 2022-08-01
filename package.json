@@ -1,0 +1,26 @@
+{
+  "name": "qoper8",
+  "version": "2.1.0",
+  "description": "Queue-Based WebWorker Pool Management Systems",
+  "main": "/src/QOper8.js",
+  "browser": "/src/QOper8.min.js",
+  "exports": {
+    ".": "/src/QOper8.js",
+    "./QOper8Worker.js": "/src/QOper8Worker.js"
+  }
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/robtweed/QOper8.git"
+  },
+  "author": "Rob Tweed, M/Gateway Developments Ltd",
+  "license": "Apache-2.0",
+  "dependencies": {
+  },
+  "bugs": {
+    "url": "https://github.com/robtweed/QOper8/issues"
+  },
+  "homepage": "https://github.com/robtweed/QOper8#readme"
+}

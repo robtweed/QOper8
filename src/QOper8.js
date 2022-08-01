@@ -39,8 +39,8 @@ class QOper8 {
     if (obj.workerInactivityLimit) obj.workerInactivityLimit = obj.workerInactivityLimit * 60000;
 
     this.name = 'QOper8';
-    this.build = '1.0';
-    this.buildDate = '23 June 2022';
+    this.build = '2.1';
+    this.buildDate = '31 July 2022';
     this.logging = obj.logging || false;
     this.queue = [];
     this.workers = new Map();
