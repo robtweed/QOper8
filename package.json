@@ -7,7 +7,7 @@
   "exports": {
     ".": "/src/QOper8.js",
     "./QOper8Worker.js": "/src/QOper8Worker.js"
-  }
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
