@@ -1,12 +1,12 @@
 {
   "name": "qoper8-ww",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Queue-Based WebWorker Pool Management Systems",
   "main": "/src/QOper8.js",
   "browser": "/src/QOper8.min.js",
+  "type": "module",
   "exports": {
-    ".": "/src/QOper8.js",
-    "./QOper8Worker.js": "/src/QOper8Worker.js"
+    ".": "./src/QOper8.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
