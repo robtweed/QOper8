@@ -42,15 +42,23 @@ QOper8 should work on all modern browsers. The only dependencies are that the br
 
 ## Installing
 
+### From CDN
+
 You can use QOoper8 directly from the Github CDN linked to this repository.  In your main module, load it using:
 
       const {QOper8} = await import('https://cdn.jsdelivr.net/gh/robtweed/QOper8/src/qoper8.min.js');
+
+### Clone from Github
 
 Alternatively, clone or copy the file [*/src/qoper8.min.js*](/src/qoper8.min.js)
 to an appropriate directory on your web server and load it directly from there, eg:
 
 
       const {QOper8} = await import('/path/to/qoper8.min.js');
+
+### From NPM
+
+        npm install qoper8-ww
 
 
 ## Starting/Configuring QOper8
