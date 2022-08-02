@@ -23,9 +23,15 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-1 August 2022
+2 August 2022
 
  */
+
+// For full, unminified source code of QOper8Worker.js, see /src/QOper8Worker.js in repository
+
+let workerCode = `
+let QOper8Worker={handlersByMessageType:new Map,handlers:new Map,id:!1,lastActivityAt:Date.now(),delay:6e4,timer:!1,inactivityLimit:18e4,isActive:!1,toBeTerminated:!1,logging:!1,listeners:new Map,on:function(e,r){this.listeners.has(e)||this.listeners.set(e,r)},off:function(e){this.listeners.has(e)&&this.listeners.delete(e)},emit:function(e,r){if(this.listeners.has(e)){this.listeners.get(e).call(this,r)}}};onmessage=async function(e){function r(e){(e=e||{}).qoper8={finished:!0},postMessage(e),QOper8Worker.emit("finished",e),QOper8Worker.isActive=!1,QOper8Worker.toBeTerminated&&t()}function i(e){QOper8Worker.logging&&console.log(Date.now()+": "+e)}function t(){i("Worker "+QOper8Worker.id+" sending request to shut down");clearInterval(QOper8Worker.timer),postMessage({qoper8:{shutdown:!0}}),QOper8Worker.emit("shutdown_signal_sent")}let o;QOper8Worker.lastActivityAt=Date.now(),QOper8Worker.isActive=!0,QOper8Worker.log=i;let s=e.data;if(s.qoper8&&s.qoper8.init&&void 0!==s.qoper8.id)return QOper8Worker.id=s.qoper8.id,s.qoper8.workerInactivityCheckTime&&(QOper8Worker.delay=s.qoper8.workerInactivityCheckTime),s.qoper8.workerInactivityLimit&&(QOper8Worker.inactivityLimit=s.qoper8.workerInactivityLimit),s.qoper8.handlersByMessageType&&(QOper8Worker.handlersByMessageType=s.qoper8.handlersByMessageType),QOper8Worker.logging=s.qoper8.logging,QOper8Worker.timer=setInterval(function(){let e=Date.now()-QOper8Worker.lastActivityAt;i("Worker "+QOper8Worker.id+" inactive for "+e),i("Inactivity limit: "+QOper8Worker.inactivityLimit),e>QOper8Worker.inactivityLimit&&(QOper8Worker.isActive?(i("Worker "+QOper8Worker.id+" flagged for termination"),QOper8Worker.toBeTerminated=!0):t())},QOper8Worker.delay),i("new worker "+QOper8Worker.id+" started..."),QOper8Worker.emit("started",{id:QOper8Worker.id}),r();if(i("Message received by worker "+QOper8Worker.id+": "+JSON.stringify(s,null,2)),QOper8Worker.emit("received",{message:s}),!s.type&&!s.handlerUrl)return o="No type or handler specified in message sent to worker "+QOper8Worker.id,QOper8Worker.emit("error",o),r({error:o,originalMessage:s});if(!s.type||!QOper8Worker.handlersByMessageType.has(s.type))return i(o="No handler for messages of type "+s.type),QOper8Worker.emit("error",o),r({error:o,originalMessage:s});if(!QOper8Worker.handlers.has(s.type)){let e=QOper8Worker.handlersByMessageType.get(s.type);i("fetching "+e);try{importScripts(e);let t=self.handler;QOper8Worker.handlers.set(s.type,t),QOper8Worker.emit("handler_imported",{handlerUrl:e})}catch(t){return i(o="Unable to load Handler Url "+e),i(JSON.stringify(t,null,2)),QOper8Worker.emit("error",o),r({error:o,originalMessage:s,workerId:QOper8Worker.id})}}QOper8Worker.handlers.get(s.type).call(QOper8Worker,s,r)};
+`;
 
 class QOper8 {
   constructor(obj) {
@@ -39,8 +45,8 @@ class QOper8 {
     if (obj.workerInactivityLimit) obj.workerInactivityLimit = obj.workerInactivityLimit * 60000;
 
     this.name = 'QOper8';
-    this.build = '2.1';
-    this.buildDate = '1 August 2022';
+    this.build = '2.2';
+    this.buildDate = '2 August 2022';
     this.logging = obj.logging || false;
     this.queue = [];
     this.workers = new Map();
@@ -131,39 +137,24 @@ class QOper8 {
     }
   }
 
-  startWorker() {
-    let worker;
+  createUrl(code) {
+    let blob;
     try {
-      // force Firefox to fail to prevent security error
-      // Firefox will successfully start a worker with a cross-origin URL but won't let it then work!
-      if (this.worker.loaderUrl.startsWith('http') && navigator.userAgent.includes('Firefox')) {let x = zzz;}
-
-      worker = new Worker(this.worker.loaderUrl);
+      blob = new Blob([code], { "type": 'application/javascript' });
     }
     catch (e) {
-
-      // Blob URL workaround of cross-origin limitations courtesy of:
-      //  https://benohead.com/blog/2017/12/06/cross-domain-cross-browser-web-workers/
-
-      try {
-        let blob;
-        try {
-          blob = new Blob(["importScripts('" + this.worker.loaderUrl + "');"], { "type": 'application/javascript' });
-        }
-        catch (e1) {
-          let blobBuilder = new (window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder)();
-          blobBuilder.append("importScripts('" + this.worker.loaderUrl + "');");
-          blob = blobBuilder.getBlob('application/javascript');
-        }
-        let url = window.URL || window.webkitURL;
-        let blobUrl = url.createObjectURL(blob);
-        worker = new Worker(blobUrl);
-      }
-      catch (e2) {
-        console.log('*** Cannot load worker URL ' + this.worker.loaderUrl + ' even as blob URL');
-      }
+      let blobBuilder = new (window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder)();
+      blobBuilder.append(code);
+      blob = blobBuilder.getBlob('application/javascript');
     }
+    let url = window.URL || window.webkitURL;
+    let blobUrl = url.createObjectURL(blob);
+    return blobUrl;
+  }
 
+  startWorker() {
+    let blobUrl = this.createUrl(workerCode);
+    let worker = new Worker(blobUrl);
     let q = this;
 
     worker.onmessage = function(e) {
