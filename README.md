@@ -71,8 +71,6 @@ You start and configure QOper8 by creating an instance of the QOper8 class:
 
 - *poolSize*: the maximum number of WebWorker processes that QOper8 will start and run concurrently (Note that WebWorkers are started dynamically on demand.  If not specified, the poolSize will be 1: ie all messages will be handled by a single WebWorker
 
-- *workerLoaderUrl*: the URL for the QOper8Worker.js module that is used by each of your WebWorkers.  If not specified, a URL of *./js/QOper8Worker.min.js* will be used
-
 - *handlersByMessageType*: a JavaScript Map of each message type to its respective handler method module URL.  Message types can be any string value
 
 - *logging*: if set to *true*, QOper8 will generate console.log messages for each of its critical processing steps within both the main process and every WebWorker process.  This is useful for debugging during development.  If not specified, it is set to *false*.
@@ -89,7 +87,6 @@ For example:
 
       let qoper8 = new QOper8({
         poolSize: 2,
-        workerLoaderUrl: './js/QOper8Worker.min.js',
         logging: true,
         handlersByMessageType: new Map([
           ['myMessageType1', './type1.js'],
@@ -241,7 +238,6 @@ Now define our main application file.  Note the mapping of the *myMessage* type 
         // Start/Configure an instance of QOper8:
 
         let qoper8 = new QOper8({
-          workerLoaderUrl: './js/QOper8Worker.min.js',
           logging: true,
           handlersByMessageType: new Map([
             ['myMessage', './myMessage.js']
