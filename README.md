@@ -382,7 +382,6 @@ Try out this [live example](https://robtweed.github.io/QOper8/examples/live), ru
 from the source code you'll find in the [*/examples/live*](/examples/live) folder of this repo.
 
 
-
 ## License
 
  Copyright (c) 2022 M/Gateway Developments Ltd,                           
