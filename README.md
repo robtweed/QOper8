@@ -40,6 +40,12 @@ QOper8 should work on all modern browsers. The only dependencies are that the br
 - ES6 Modules
 
 
+## Live Demo
+
+Try out this [live example](https://robtweed.github.io/QOper8/examples/live), running directly
+from the source code you'll find in the [*/examples/live*](/examples/live) folder of this repo.
+
+
 ## Installing
 
 ### From CDN
@@ -212,7 +218,7 @@ For example:
 
 This simple example creates a pool of 1 WebWorker (the default configuration) and allows you to process a message of type *myMessage*
 
-First, let's define the Message Handler Module.  We'll use the example above:
+First, let's define the Message Handler Script file.  We'll use the example above:
 
 ### myMessage.js
 
@@ -286,6 +292,86 @@ When you load it into you browser, take a look at the console log in your browse
 You should see the *console.log()* messages generated at each step by QOper8 as it processes the queued message.
 
 If you now leave the web page alone, you'll see the messages generated when it periodically checks the WebWorker process for inactivity.  Eventually you'll see it being shut down automatically.
+
+
+## Optionally Packaging Your Message Handler Code
+
+As you'll have seen above, the default way in which QOper8 dynamically loads each of your Message Handler script files is via a corresponding URL that you define in the QOper8 constructor's *handlersByMessageType* property.
+
+When a Message Handler Script File is needed by QOper8, it loads it using the WebWorker's *importScripts()* API.  This is the standard way to load libraries into WebWorkers, but of course, it means that each of your Message Handler Script Files need to reside on the Web Server from which they can be fetched via the URL you've specified.
+
+This approach is OK if you manually build and maintain your front-end code, but if you want to use a Node.js/WebPack approach for building a bundled file containing all your front-end code, it is awkward and inconvenient to have the parts needed by QOper8's WebWorker(s) residing separately on the Web Server.  It's also awkward if you want to distribute a package based around QOper8.
+
+Fortunately, there is a trick that can be used, using what are known as *Blob URLs* that can be dynamically created from an image of the code you want to fetch.  QOper8 uses this approach itself for its *QOper8Worker.js* Loader file, and makes available to you the same logic via an API named *createURL()*, so you can use it for your own Message Handler Script Files.
+
+Let's modify the example we created above to demonstrate how to package all your code into a single bundleable file.
+
+The first thing I would do is to take your Message Handler Script File and put it through a minifier, eg 
+[this Online Uglifier](https://skalman.github.io/UglifyJS-online/).  So the Message Handler Script File code for the example above would look like this:
+
+        self.handler=function(e,a){a({processing:"Message processing done!",data:e.data,time:Date.now()})};
+
+Now add this as the value of a variable in your main script file.  To avoid any clashes with single and double quotes, I tend to use back-tick characters around the minimised code, eg:
+
+        let handlerCode = `self.handler=function(e,a){a({processing:"Message processing done!",data:e.data,time:Date.now()})};`;
+
+
+We can now use QOper8's blobURL creation API to create a blobURL for the Message Handler Script File code:
+
+        let url = QOper8.createUrl(handlerCode);
+
+And we can now use this URL in the *handlersByMessageType* Map, eg:
+
+          qoper8.handlersByMessageType.set('myMessage', url);
+
+
+So, let's put that all together into a new version of the *app.js* file:
+
+### app.js
+
+      (async () => {
+
+        // load/import the QOper8 module from its source directory (change the path as appropriate)
+
+        const {QOper8} = await import('../js/qoper8.min.js');
+
+        // Start/Configure an instance of QOper8, without specifying a handlersByMessageType Map:
+
+        let qoper8 = new QOper8({
+          logging: true
+        });
+
+        let handlerCode = `self.handler=function(e,a){a({processing:"Message processing done!",data:e.data,time:Date.now()})};`;
+        let url = QOper8.createUrl(handlerCode);
+
+        // Now add this Blob URL to your QOper8 instance's handlersByMessageType Map:
+
+        qoper8.handlersByMessageType.set('myMessage', url);
+
+        // add a message to the Qoper8 queue and await its results
+
+        let res = await qoper8.send({
+          type: 'myMessage',
+          data: {
+            hello: 'world'
+          }
+        });
+
+        console.log('Results received from WebWorker:');
+        console.log(JSON.stringify(res, null, 2));
+
+
+      })();
+
+
+So you now have everything defined in a single file that can be bundled using WebPack or distributed as a single package!
+
+### Downsides of the Blob URL Approach
+
+Whilst it clearly has many advantages in terms of portability and re-usability of code, the main downside of this approach is that it becomes a lot more difficult to debug your WebWorker code during development.  You'll find that the browser's development tools will show a meaningless URL when your Message Handler Script File is loaded into the WebWorker, and, for example, if you use a lot of different Message Handler Scripts, you'll find it difficult to distinguish and identify which ones have been loaded from the browser's Development Tools console.
+
+I recommend developing using separately-loaded versions of your Message Handler Script Files until you have them working properly, and only then should you package them up using Blob URLs.
+
 
 
 ## Additional QOper8 APIs
@@ -380,10 +466,7 @@ Note that you cannot access the browser DOM from a WebWorker.  Instead, use the 
       });
 
 
-## Live Demo
 
-Try out this [live example](https://robtweed.github.io/QOper8/examples/live), running directly
-from the source code you'll find in the [*/examples/live*](/examples/live) folder of this repo.
 
 
 ## License
