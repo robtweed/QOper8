@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-2 August 2022
+4 August 2022
 
  */
 
@@ -37,16 +37,13 @@ class QOper8 {
   constructor(obj) {
 
     obj = obj || {};
-    if (typeof obj === 'string') {
-      obj = {workerLoaderUrl: obj};
-    }
 
     if (obj.workerInactivityCheckInterval) obj.workerInactivityCheckInterval = obj.workerInactivityCheckInterval * 1000;
     if (obj.workerInactivityLimit) obj.workerInactivityLimit = obj.workerInactivityLimit * 60000;
 
     this.name = 'QOper8';
-    this.build = '2.2';
-    this.buildDate = '2 August 2022';
+    this.build = '2.3';
+    this.buildDate = '4 August 2022';
     this.logging = obj.logging || false;
     this.queue = [];
     this.workers = new Map();
@@ -55,7 +52,6 @@ class QOper8 {
     this.nextWorkerId = 0;
     this.poolSize = obj.poolSize || 1;
     this.worker = {
-      loaderUrl: obj.workerLoaderUrl || './js/QOper8Worker.min.js',
       inactivityCheckInterval: obj.workerInactivityCheckInterval || 60000,
       inactivityLimit: obj.workerInactivityLimit || 20 * 60000
     }
@@ -139,22 +135,45 @@ class QOper8 {
 
   createUrl(code) {
     let blob;
+    let blobUrl;
     try {
       blob = new Blob([code], { "type": 'application/javascript' });
     }
     catch (e) {
-      let blobBuilder = new (window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder)();
-      blobBuilder.append(code);
-      blob = blobBuilder.getBlob('application/javascript');
+      try {
+        let blobBuilder = new (window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder)();
+        blobBuilder.append(code);
+        blob = blobBuilder.getBlob('application/javascript');
+      }
+      catch(e2) {
+        // running in old version of Node.js?
+        return false;
+      }
     }
-    let url = window.URL || window.webkitURL;
-    let blobUrl = url.createObjectURL(blob);
+    try {
+      // wrapped in a try here to allow Node.js to import this module
+      let url = window.URL || window.webkitURL;
+      blobUrl = url.createObjectURL(blob);
+    }
+    catch(e2) {
+      blobUrl = false;
+    }
     return blobUrl;
   }
 
   startWorker() {
     let blobUrl = this.createUrl(workerCode);
-    let worker = new Worker(blobUrl);
+    let worker;
+    if (blobUrl) {
+      worker = new Worker(blobUrl);
+    }
+    else {
+      // if loaded in Node.js to allow it to load without an error
+      worker = {};
+      worker.postMessage = function(obj) {
+        //console.log('simulated postMessage for ' + JSON.stringify(obj))
+      };
+    }
     let q = this;
 
     worker.onmessage = function(e) {
