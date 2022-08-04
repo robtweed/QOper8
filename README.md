@@ -60,6 +60,10 @@ to an appropriate directory on your web server and load it directly from there, 
 
         npm install qoper8-ww
 
+Then you can import the QOper8 class:
+
+        import {QOper8} from 'qoper8-ww';
+
 
 ## Starting/Configuring QOper8
 
