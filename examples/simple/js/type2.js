@@ -3,7 +3,7 @@ self.handler = function(obj, finished) {
   let worker = this;
 
   this.on('error', function(error) {
-    this.log('*** error *** : ' + error);
+    worker.log('*** error *** : ' + error);
   });
 
   finished({

@@ -306,14 +306,18 @@ Fortunately, there is a trick that can be used, using what are known as *Blob UR
 
 Let's modify the example we created above to demonstrate how to package all your code into a single bundleable file.
 
-The first thing I would do is to take your Message Handler Script File and put it through a minifier, eg 
-[this Online Uglifier](https://skalman.github.io/UglifyJS-online/).  So the Message Handler Script File code for the example above would look like this:
+First, add the handler code as the value of a variable in your main script file.  By using back-tick characters around the code, you can have it laid out in an easy-to-read form:
 
-        self.handler=function(e,a){a({processing:"Message processing done!",data:e.data,time:Date.now()})};
-
-Now add this as the value of a variable in your main script file.  To avoid any clashes with single and double quotes, I tend to use back-tick characters around the minimised code, eg:
-
-        let handlerCode = `self.handler=function(e,a){a({processing:"Message processing done!",data:e.data,time:Date.now()})};`;
+        let handlerCode = `      
+          self.handler = function(obj, finished) {
+            // simple example that just echoes back the incoming message
+            finished({
+              processing: 'Message processing done!',
+              data: obj.data,
+              time: Date.now()
+            });
+            };
+        `;
 
 
 We can now use QOper8's blobURL creation API to create a blobURL for the Message Handler Script File code:
@@ -341,7 +345,17 @@ So, let's put that all together into a new version of the *app.js* file:
           logging: true
         });
 
-        let handlerCode = `self.handler=function(e,a){a({processing:"Message processing done!",data:e.data,time:Date.now()})};`;
+        let handlerCode = `     
+          self.handler = function(obj, finished) {
+            // simple example that just echoes back the incoming message
+            finished({
+              processing: 'Message processing done!',
+              data: obj.data,
+              time: Date.now()
+            });
+            };
+        `;
+        `;
         let url = QOper8.createUrl(handlerCode);
 
         // Now add this Blob URL to your QOper8 instance's handlersByMessageType Map:

@@ -4,7 +4,6 @@
 
   let options = {
     poolSize: 2,
-    workerLoaderUrl: './js/QOper8Worker.min.js',
     workerInactivityCheckInterval: 20,
     workerInactivityLimit: 5,
     //logging: true,

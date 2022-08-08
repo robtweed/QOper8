@@ -23,15 +23,15 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-4 August 2022
+7 August 2022
 
  */
 
 // For full, unminified source code of QOper8Worker.js, see /src/QOper8Worker.js in repository
 
-let workerCode = `
-let QOper8Worker={handlersByMessageType:new Map,handlers:new Map,id:!1,lastActivityAt:Date.now(),delay:6e4,timer:!1,inactivityLimit:18e4,isActive:!1,toBeTerminated:!1,logging:!1,listeners:new Map,on:function(e,r){this.listeners.has(e)||this.listeners.set(e,r)},off:function(e){this.listeners.has(e)&&this.listeners.delete(e)},emit:function(e,r){if(this.listeners.has(e)){this.listeners.get(e).call(this,r)}}};onmessage=async function(e){function r(e){(e=e||{}).qoper8={finished:!0},postMessage(e),QOper8Worker.emit("finished",e),QOper8Worker.isActive=!1,QOper8Worker.toBeTerminated&&t()}function i(e){QOper8Worker.logging&&console.log(Date.now()+": "+e)}function t(){i("Worker "+QOper8Worker.id+" sending request to shut down");clearInterval(QOper8Worker.timer),postMessage({qoper8:{shutdown:!0}}),QOper8Worker.emit("shutdown_signal_sent")}let o;QOper8Worker.lastActivityAt=Date.now(),QOper8Worker.isActive=!0,QOper8Worker.log=i;let s=e.data;if(s.qoper8&&s.qoper8.init&&void 0!==s.qoper8.id)return QOper8Worker.id=s.qoper8.id,s.qoper8.workerInactivityCheckTime&&(QOper8Worker.delay=s.qoper8.workerInactivityCheckTime),s.qoper8.workerInactivityLimit&&(QOper8Worker.inactivityLimit=s.qoper8.workerInactivityLimit),s.qoper8.handlersByMessageType&&(QOper8Worker.handlersByMessageType=s.qoper8.handlersByMessageType),QOper8Worker.logging=s.qoper8.logging,QOper8Worker.timer=setInterval(function(){let e=Date.now()-QOper8Worker.lastActivityAt;i("Worker "+QOper8Worker.id+" inactive for "+e),i("Inactivity limit: "+QOper8Worker.inactivityLimit),e>QOper8Worker.inactivityLimit&&(QOper8Worker.isActive?(i("Worker "+QOper8Worker.id+" flagged for termination"),QOper8Worker.toBeTerminated=!0):t())},QOper8Worker.delay),i("new worker "+QOper8Worker.id+" started..."),QOper8Worker.emit("started",{id:QOper8Worker.id}),r();if(i("Message received by worker "+QOper8Worker.id+": "+JSON.stringify(s,null,2)),QOper8Worker.emit("received",{message:s}),!s.type&&!s.handlerUrl)return o="No type or handler specified in message sent to worker "+QOper8Worker.id,QOper8Worker.emit("error",o),r({error:o,originalMessage:s});if(!s.type||!QOper8Worker.handlersByMessageType.has(s.type))return i(o="No handler for messages of type "+s.type),QOper8Worker.emit("error",o),r({error:o,originalMessage:s});if(!QOper8Worker.handlers.has(s.type)){let e=QOper8Worker.handlersByMessageType.get(s.type);i("fetching "+e);try{importScripts(e);let t=self.handler;QOper8Worker.handlers.set(s.type,t),QOper8Worker.emit("handler_imported",{handlerUrl:e})}catch(t){return i(o="Unable to load Handler Url "+e),i(JSON.stringify(t,null,2)),QOper8Worker.emit("error",o),r({error:o,originalMessage:s,workerId:QOper8Worker.id})}}QOper8Worker.handlers.get(s.type).call(QOper8Worker,s,r)};
-`;
+let workerCode = `let QWorker=class{constructor(){this.listeners=new Map,this.logging=!1;let e=new Map,r=!1,t=!1,i=this,o=!1,s=!1,n=!1,a=6e4,l=18e4,g=new Map,p=!1,d=Date.now(),h=function(){i.log("Worker "+r+" sending request to shut down");clearInterval(QOper8Worker.timer),postMessage({qoper8:{shutdown:!0}}),i.emit("shutdown_signal_sent")},c=function(e){(e=e||{}).qoper8||(e.qoper8={}),e.qoper8.finished=!0,postMessage(e),i.emit("finished",e),o=!1,s&&h()};this.onMessage=function(f){let m;if(d=Date.now(),o=!0,f.qoper8&&f.qoper8.init&&void 0!==f.qoper8.id)return t?(m="QOper8 Worker "+r+" has already been initialised",i.emit("error",m),c({error:m,originalMessage:f})):(r=f.qoper8.id,n=f.qoper8.uuid,f.qoper8.workerInactivityCheckTime&&(a=f.qoper8.workerInactivityCheckTime),f.qoper8.workerInactivityLimit&&(l=f.qoper8.workerInactivityLimit),f.qoper8.handlersByMessageType&&(g=f.qoper8.handlersByMessageType),i.logging=f.qoper8.logging,p=setInterval(function(){let e=Date.now()-d;i.log("Worker "+r+" inactive for "+e),i.log("Inactivity limit: "+l),e>l&&(o?(i.log("Worker "+r+" flagged for termination"),s=!0):h())},a),i.log("new worker "+r+" started..."),i.emit("started",{id:r}),t=!0,c());if(!f.qoper8||!f.qoper8.uuid)return m="Invalid message sent to QOper8 Worker "+r,i.emit("error",m),c({error:m,originalMessage:f});if(f.qoper8.uuid!==n)return m="Invalid UUID on message sent to QOper8 Worker "+r,i.emit("error",m),c({error:m,originalMessage:f});let u=JSON.parse(JSON.stringify(f));if(delete f.qoper8.uuid,delete u.qoper8,i.log("Message received by worker "+r+": "+JSON.stringify(u,null,2)),i.emit("received",{message:u}),!f.type&&!f.handlerUrl)return m="No type or handler specified in message sent to worker "+r,i.emit("error",m),c({error:m,originalMessage:u});if(!f.type||!g.has(f.type))return m="No handler for messages of type "+f.type,i.log(m),i.emit("error",m),c({error:m,originalMessage:u});if(!e.has(f.type)){let t=g.get(f.type);i.log("fetching "+t);try{importScripts(t);let o=self.handler;e.set(f.type,o),i.emit("handler_imported",{handlerUrl:t})}catch(e){return m="Unable to load Handler Url "+t,i.log(m),i.log(JSON.stringify(e,null,2)),i.emit("error",m),c({error:m,originalMessage:u,workerId:r})}}e.get(f.type).call(i,f,c)}}log(e){this.logging&&console.log(Date.now()+": "+e)}on(e,r){this.listeners.has(e)||this.listeners.set(e,r)}off(e){this.listeners.has(e)&&this.listeners.delete(e)}emit(e,r){if(this.listeners.has(e)){this.listeners.get(e).call(this,r)}}},QOper8Worker=new QWorker;onmessage=async function(e){QOper8Worker.onMessage(e.data)};`;
+
+// ******* QOper8 *****************
 
 class QOper8 {
   constructor(obj) {
@@ -42,14 +42,9 @@ class QOper8 {
     if (obj.workerInactivityLimit) obj.workerInactivityLimit = obj.workerInactivityLimit * 60000;
 
     this.name = 'QOper8';
-    this.build = '2.3';
-    this.buildDate = '4 August 2022';
+    this.build = '2.4';
+    this.buildDate = '7 August 2022';
     this.logging = obj.logging || false;
-    this.queue = [];
-    this.workers = new Map();
-    this.isAvailable = new Map();
-    this.callbacks = new Map();
-    this.nextWorkerId = 0;
     this.poolSize = obj.poolSize || 1;
     this.worker = {
       inactivityCheckInterval: obj.workerInactivityCheckInterval || 60000,
@@ -57,6 +52,151 @@ class QOper8 {
     }
     this.handlersByMessageType = obj.handlersByMessageType || new Map();
     this.listeners = new Map();
+
+    let uuid = uuidv4();
+    let workers = new Map();
+    let isAvailable = new Map();
+    let callbacks = new Map();
+    let queue = [];
+    let nextWorkerId = 0;
+    let q = this;
+
+    function uuidv4() {
+      if (window.location.protocol === 'https:') {
+        return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+          (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+        );
+      }
+      else {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+    }
+
+    function processQueue() {
+      q.log('try processing queue: length ' + queue.length);
+      if (queue.length === 0) {
+        q.log('Queue empty');
+        return;
+      }
+      let worker = getWorker();
+      if (worker) {
+        q.log('worker ' + worker.id + ' was available. Sending message to it');
+        sendMessageToWorker(worker);
+      }
+      else {
+        // no workers were available
+        // start a new one unless maximum pool size has been exceeded
+        q.log('no available workers');
+        if (workers.size < q.poolSize) {
+          q.log('starting new worker');
+          startWorker();
+        }
+      }
+    }
+
+    function getWorker() {
+      let worker;
+      for (const [id, worker] of workers) {
+        worker.id = id;
+        if (isAvailable.get(+worker.id)) return worker;
+        q.log('worker ' + id + ' is not available');
+      }
+      return false;
+    }
+
+    function sendMessageToWorker(worker) {
+      if (queue.length === 0) return;
+      let requestObj = queue.shift();
+      let id = worker.id;
+      callbacks.set(id, requestObj.qoper8.callback);
+      delete requestObj.qoper8.callback;
+      isAvailable.set(+id, false);
+      sendMessage(requestObj, worker);
+      q.emit('sentToWorker', {
+        message: requestObj,
+        workerId: id
+      });
+    }
+
+    function sendMessage(msg, worker) {
+      if (!msg.qoper8) msg.qoper8 = {};
+      msg.qoper8.uuid = uuid;
+      worker.postMessage(msg);
+    }
+
+    function startWorker() {
+      let blobUrl = q.createUrl(workerCode);
+      let worker;
+      if (blobUrl) {
+        worker = new Worker(blobUrl);
+      }
+      else {
+        // if loaded in Node.js to allow it to load without an error
+        worker = {};
+        worker.postMessage = function(obj) {
+          //console.log('simulated postMessage for ' + JSON.stringify(obj))
+        };
+      }
+
+      worker.onmessage = function(e) {
+        let res = e.data;
+
+        let dispRes = JSON.parse(JSON.stringify(res));
+        delete dispRes.qoper8;
+
+        q.emit('replyReceived', {
+          reply: dispRes,
+          workerId: worker.id
+        });
+
+        q.log('response received from Worker: ' + worker.id);
+        q.log(JSON.stringify(dispRes, null, 2));
+
+        if (callbacks.has(worker.id)) {
+          let callback = callbacks.get(worker.id);
+          if (callback) callback(res);
+          callbacks.delete(worker.id);
+        }
+
+        if (res.qoper8) {
+          if (res.qoper8.finished) {
+            isAvailable.set(+worker.id, true);
+            processQueue();
+          }
+          else if (res.qoper8.shutdown) {
+            q.log('Master shutting down worker ' + worker.id);
+            workers.delete(worker.id);
+            q.emit('workerTerminated', worker.id);
+            worker.terminate();
+          }
+        }
+      }
+
+      worker.id = nextWorkerId++;
+      let msg = {
+        qoper8: {
+          init: true,
+          id: worker.id,
+          handlersByMessageType: q.handlersByMessageType,
+          workerInactivityCheckTime: q.worker.inactivityCheckTime,
+          workerInactivityLimit: q.worker.inactivityLimit,
+          logging: q.logging
+        }
+      };
+      sendMessage(msg, worker);
+      workers.set(worker.id, worker);
+      q.emit('workerStarted', worker.id)
+    }
+
+    this.addToQueue = function(obj) {
+      queue.push(obj);
+      q.emit('addedToQueue', obj);
+      processQueue();
+    }
+
   }
 
   log(message) {
@@ -65,16 +205,9 @@ class QOper8 {
     }
   }
 
-  addToQueue(obj) {
-    this.queue.push(obj);
-    this.emit('addedToQueue', obj);
-    this.processQueue();
-  }
-
   message(obj, callback) {
-    obj.qoper8 = {
-      callback: callback || false
-    };
+    if (!obj.qoper8) obj.qoper8 = {};
+    obj.qoper8.callback =  callback || false
     this.addToQueue(obj);
   }
 
@@ -85,52 +218,6 @@ class QOper8 {
         resolve(responseObj);
       });
     });
-  }
-
-  getWorker() {
-    let worker;
-    for (const [id, worker] of this.workers) {
-      worker.id = id;
-      if (this.isAvailable.get(+worker.id)) return worker;
-      this.log('worker ' + id + ' is not available');
-    }
-    return false;
-  }
-
-  sendMessageToWorker(worker) {
-    if (this.queue.length === 0) return;
-    let requestObj = this.queue.shift();
-    let id = worker.id;
-    this.callbacks.set(id, requestObj.qoper8.callback);
-    delete requestObj.qoper8;
-    this.isAvailable.set(+id, false);
-    worker.postMessage(requestObj);
-    this.emit('sentToWorker', {
-      message: requestObj,
-      workerId: id
-    });
-  }
-
-  processQueue() {
-    this.log('try processing queue: length ' + this.queue.length);
-    if (this.queue.length === 0) {
-      this.log('Queue empty');
-      return;
-    }
-    let worker = this.getWorker();
-    if (worker) {
-      this.log('worker ' + worker.id + ' was available. Sending message to it');
-      this.sendMessageToWorker(worker);
-    }
-    else {
-      // no workers were available
-      // start a new one unless maximum pool size has been exceeded
-      this.log('no available workers');
-      if (this.workers.size < this.poolSize) {
-        this.log('starting new worker');
-        this.startWorker();
-      }
-    }
   }
 
   createUrl(code) {
@@ -159,69 +246,6 @@ class QOper8 {
       blobUrl = false;
     }
     return blobUrl;
-  }
-
-  startWorker() {
-    let blobUrl = this.createUrl(workerCode);
-    let worker;
-    if (blobUrl) {
-      worker = new Worker(blobUrl);
-    }
-    else {
-      // if loaded in Node.js to allow it to load without an error
-      worker = {};
-      worker.postMessage = function(obj) {
-        //console.log('simulated postMessage for ' + JSON.stringify(obj))
-      };
-    }
-    let q = this;
-
-    worker.onmessage = function(e) {
-      let res = e.data;
-
-      q.emit('replyReceived', {
-        reply: res,
-        workerId: worker.id
-      });
-
-      q.log('response received from Worker: ' + worker.id);
-      q.log(JSON.stringify(res, null, 2));
-
-      if (q.callbacks.has(worker.id)) {
-        let callback = q.callbacks.get(worker.id);
-        if (callback) callback(res);
-        q.callbacks.delete(worker.id);
-      }
-
-      if (res.qoper8) {
-        if (res.qoper8.finished) {
-          q.isAvailable.set(+worker.id, true);
-          q.processQueue();
-        }
-        else if (res.qoper8.shutdown) {
-          q.log('Master shutting down worker ' + worker.id);
-          q.workers.delete(worker.id);
-          q.emit('workerTerminated', worker.id);
-          worker.terminate();
-        }
-      }
-    }
-
-    worker.id = this.nextWorkerId++;
-
-    worker.postMessage({
-      qoper8: {
-        init: true,
-        id: worker.id,
-        handlersByMessageType: this.handlersByMessageType,
-        workerInactivityCheckTime: this.worker.inactivityCheckTime,
-        workerInactivityLimit: this.worker.inactivityLimit,
-        logging: this.logging
-      }
-    });
-
-    this.workers.set(worker.id, worker);
-    this.emit('workerStarted', worker.id)
   }
 
   on(type, callback) {

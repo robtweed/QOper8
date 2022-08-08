@@ -3,7 +3,6 @@
   const {QOper8} = await import('../../src/QOper8.min.js');
 
   let qoper8 = new QOper8({
-    workerLoaderUrl: '../../src/QOper8Worker.min.js',
     logging: true,
     handlersByMessageType: new Map([
       ['demoMessage', 'https://robtweed.github.io/QOper8/examples/live/demoMessage.js']
