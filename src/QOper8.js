@@ -79,7 +79,7 @@ class QOper8 {
     let q = this;
 
     this.log = function(message) {
-      if (!logging.disabled && this.logging) {
+      if (!loggingDisabled && this.logging) {
         console.log(Date.now() + ': ' + message);
       }
     };
