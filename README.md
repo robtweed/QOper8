@@ -315,7 +315,8 @@ It's entirely up to you.  Each WebWorker in your pool will be able to invoke you
 
 ## Benchmarking QOper8 Throughput
 
-To get an idea of the throughput performance of QOper8 on different browsers, try out the benchmarking application.  
+To get an idea of the throughput performance of QOper8 on different browsers, try out our simple 
+[QOper8 Benchmarking Application](https://robtweed.github.io/QOper8/benchmark).  
 
 This application allows you to specify the WebWorker Pool Size, and you then set up the parameters for generating a stream of identical messages that will be handled by a simple almost "do-nothing" message handler.  
 
