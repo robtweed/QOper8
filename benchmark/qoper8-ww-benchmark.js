@@ -1,6 +1,6 @@
 (async () => {
 
-  const {QOper8} = await import('https://cdn.jsdelivr.net/gh/robtweed/QOper8/src/qoper8.min.js');
+  const {QOper8} = await import('https://cdn.jsdelivr.net/gh/robtweed/QOper8/src/QOper8.min.js');
 
   function getValue(id) {
     return document.getElementById(id).value;

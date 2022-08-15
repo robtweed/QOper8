@@ -52,15 +52,15 @@ from the source code you'll find in the [*/examples/live*](/examples/live) folde
 
 You can use QOoper8 directly from the Github CDN linked to this repository.  In your main module, load it using:
 
-      const {QOper8} = await import('https://cdn.jsdelivr.net/gh/robtweed/QOper8/src/qoper8.min.js');
+      const {QOper8} = await import('https://cdn.jsdelivr.net/gh/robtweed/QOper8/src/QOper8.min.js');
 
 ### Clone from Github
 
-Alternatively, clone or copy the file [*/src/qoper8.min.js*](/src/qoper8.min.js)
+Alternatively, clone or copy the file [*/src/QOper8.min.js*](/src/QOper8.min.js)
 to an appropriate directory on your web server and load it directly from there, eg:
 
 
-      const {QOper8} = await import('/path/to/qoper8.min.js');
+      const {QOper8} = await import('/path/to/QOper8.min.js');
 
 ### From NPM
 
@@ -247,7 +247,7 @@ Now define our main application file.  Note the mapping of the *myMessage* type 
 
         // load/import the QOper8 module from its source directory (change the path as appropriate)
 
-        const {QOper8} = await import('../js/qoper8.min.js');
+        const {QOper8} = await import('../js/QOper8.min.js');
 
         // Start/Configure an instance of QOper8:
 
@@ -385,7 +385,7 @@ So, let's put that all together into a new version of the *app.js* file:
 
         // load/import the QOper8 module from its source directory (change the path as appropriate)
 
-        const {QOper8} = await import('../js/qoper8.min.js');
+        const {QOper8} = await import('../js/QOper8.min.js');
 
         // Start/Configure an instance of QOper8, without specifying a handlersByMessageType Map:
 
