@@ -85,12 +85,14 @@ You start and configure QOper8 by creating an instance of the QOper8 class:
 
 - *logging*: if set to *true*, QOper8 will generate console.log messages for each of its critical processing steps within both the main process and every WebWorker process.  This is useful for debugging during development.  If not specified, it is set to *false*.
 
+- *disableLogging*: if set to *true*, QOper8's externally-accessible read/write *logging* property is deactivated, thereby preventing the risk of unauthorised message "snooping* using the browser's JavaScript console in a production system.  If not specified, it defaults to *false*.
+
 
 You can optionally modify the parameters used by QOper8 for monitoring and shutting down inactive WebWorker processes, by using the following *options* properties:
 
-- *inactivityCheckInterval*: how frequently (in seconds) a WebWorker checks itself for inactivity.  If not specified, a value of 60 (seconds) is used
+- *workerInactivityCheckInterval*: how frequently (in seconds) a WebWorker checks itself for inactivity.  If not specified, a value of 60 (seconds) is used
 
-- *inactivityLimit*: the length of time (in minutes) a WebWorker process can remain inactive until QOper8 shuts it down.  If not specified, the maximum inactivity duration is 20 minutes.
+- *workerInactivityLimit*: the length of time (in minutes) a WebWorker process can remain inactive until QOper8 shuts it down.  If not specified, the maximum inactivity duration is 20 minutes.
 
 
 For example:
@@ -166,11 +168,13 @@ Adding a Message to the queue sets off a chain of events:
   - repeats the procedure, starting at step *1)* above again
 
 
-So, as you can see, everything related to the WebWorker processes and the message flow between the main process and the WebWorker processes is handled automatically for you by QOper8.  As far as you are concerned, there are just two steps:
+So, as you can see, everything related to the WebWorker processes and the message flow between the main process and the WebWorker processes is handled automatically for you by QOper8.  As far as you are concerned, there are just three steps:
 
 - you ceeate a Message Handler script file for each of your required message *type*s
 
 - you then add objects to the QOper8 queue, specifying the message *type* for each one
+
+- you await the response object returned from the WebWorker by your message handler
 
 
 ## The Message Handler Method Script
@@ -294,6 +298,50 @@ You should see the *console.log()* messages generated at each step by QOper8 as 
 If you now leave the web page alone, you'll see the messages generated when it periodically checks the WebWorker process for inactivity.  Eventually you'll see it being shut down automatically.
 
 
+## How Many WebWorkers Should I Use?
+
+It's entirely up to you.  Each WebWorker in your pool will be able to invoke your type-specific message handler, and each will run identically.  There's a few things to note:
+
+- Having more than one WebWorker will allow a busy workload of queued messages to be shared amongst the WebWorker pool;
+
+- if you have more than one WebWorker, you have no control over which WebWorker handles each message you add to the QOper8 queue.  This should normally not matter to you, but you need to be aware;
+
+- A QOper8 WebWorker process only handles a single message at a time.  The WebWorker is not available again until it invokes the *finished()* method within your handler.
+
+- You'll find that overall throughput will initially increase as you add more WebWorkers to your pool, but you'll then find that throughput will start to decrease as you further increase the pool.  It will depend on a number of factors, such as the type of browser and the number of CPU cores available on the machine running the browser.  Typically optimal throughput is achieved with 3-4 WebWorkers.
+
+- If you use just a single WebWorker, your queued messages will be handled individually, one at a time, in strict chronological sequence.  This can be advantageous for certain kinds of activity where you need strict control over the serialisation of activities.  The downside is that the overall throughput will be typically less than if you had a larger WebWorker pool.
+
+
+## Benchmarking QOper8 Throughput
+
+To get an idea of the throughput performance of QOper8 on different browsers, try out the benchmarking application.  
+
+This application allows you to specify the WebWorker Pool Size, and you then set up the parameters for generating a stream of identical messages that will be handled by a simple almost "do-nothing" message handler.  
+
+You specify the total number of messages you want to generate, eg 50,000, but rather than the application simply adding the whole lot to the QOper8 queue in one go, you define how to generate batches of messages that get added to the queue.  So you define:
+
+- the batch size, eg 1000 messages at a time
+- the delay time between batches, eg 200ms
+
+This avoids the performance overheads of the browser's JavaScript run-time handling a potentially massive array which could potententially adversely affect the performance throughput.  
+
+The trick is to create a balance of batch size and delay to maintain a sustainably-sized queue.  The application reports its work and results to the browser's JavaScript console, and will tell you if the queue increases with each message batch, or if the queue is exhausted between batches.
+
+Keep tweaking the delay time:
+
+- increase it if the queue keeps expanding with each new batch
+- decrease it if the queue is getting exhausted at each batch
+
+At the end of each run, the application will display, in the JavaScript console:
+
+- the total time taken
+- the throughtput rate (messages handled per second)
+- the number of messages handled by each of the WebWorkers in the pool you specified.
+
+The results can be pretty interesting, particularly comparing throughput for different browsers on the same hardware platform.  For example, you will probably find that Firefox is significantly faster than Safari.
+
+
 ## Optionally Packaging Your Message Handler Code
 
 As you'll have seen above, the default way in which QOper8 dynamically loads each of your Message Handler script files is via a corresponding URL that you define in the QOper8 constructor's *handlersByMessageType* property.
@@ -322,7 +370,7 @@ First, add the handler code as the value of a variable in your main script file.
 
 We can now use QOper8's blobURL creation API to create a blobURL for the Message Handler Script File code:
 
-        let url = QOper8.createUrl(handlerCode);
+        let url = qoper8.createUrl(handlerCode);
 
 And we can now use this URL in the *handlersByMessageType* Map, eg:
 
@@ -356,7 +404,7 @@ So, let's put that all together into a new version of the *app.js* file:
             };
         `;
         `;
-        let url = QOper8.createUrl(handlerCode);
+        let url = qoper8.createUrl(handlerCode);
 
         // Now add this Blob URL to your QOper8 instance's handlersByMessageType Map:
 
@@ -407,6 +455,25 @@ I recommend developing using separately-loaded versions of your Message Handler 
 
   This can be helpful to verify the correct chronological sequence of events within the console log when debugging.
 
+- qoper8.getMessageCount(): Returns the total number of messages successfully handled by QOper8
+
+- qoper8.getQueueLength(): Returns the current queue length.  Under most circumstances this should usually return zero.
+
+- qoper8.stop(): Controllably shuts down all WebWorkers in the pool and prevents any further messages being added to the queue.  Any messages currently in the queue will remain there and will not be processed.
+
+- qoper8.start(): Can be used after a *stop()* to resume QOper8's ability to add messages to its queue and to process them.  QOper8 will automatically start up new WebWorker(s).
+
+- qoper8.createUrl(code): Creates a *blobURL* (see earlier for explanation).
+
+### Properties:
+
+- qoper8.name: returns *QOper8*
+
+- qoper8.build: returns the build number, eg 2.5
+
+- qoper8.buildDate: returns the date the build was created
+
+- qoper8.logging: read/write property, defaults to *false*.  Set it to *true* to see a trace of QOper8 foreground and WebWorker activity in the JavaScript console.  Set to false for production systems to avoid any overheads and to prevent message snooping. To prevent unauthorised logging, use the *disableLogging* property at startup (this cannot be subsequently modified by a user or third-party script)
 
 ## Events
 
@@ -444,6 +511,8 @@ The Main process QOper8 event names are:
 - *sentToWorker*: emitted whenever a message is removed from the queue and sent to a WebWorker
 - *replyReceived*: emitted whenever a response message from a WebWorker is received by the main browser process 
 - *workerTerminated*: emitted whenever QOper8 shuts down a WebWorker
+- *stop*: emitted whenever QOper8 is stopped using the *stop()* API
+- *start*: emitted whenever QOper8 is re-started using the *start()* API
 
 You can provide your own custom handlers for these events by using the *on()* method within your main module.
 

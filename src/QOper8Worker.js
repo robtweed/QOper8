@@ -23,15 +23,15 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-7 August 2022
+15 August 2022
 
  */
 
 let QWorker = class {
   constructor() {
-    this.listeners = new Map();
     this.logging = false;
 
+    let listeners = new Map();
     let handlers = new Map();
     let id = false;
     let initialised = false;
@@ -44,6 +44,7 @@ let QWorker = class {
     let handlersByMessageType = new Map();
     let timer = false;
     let lastActivityAt = Date.now();
+    let noOfMessages = 0;
 
     let shutdown = function() {
       // signal to master process that I'm to be shut down
@@ -88,6 +89,29 @@ let QWorker = class {
       }, delay);
     }
 
+    this.getMessageCount = function() {
+      return noOfMessages;
+    };
+
+    this.on = function(type, callback) {
+      if (!listeners.has(type)) {
+        listeners.set(type, callback);
+      }
+    };
+
+    this.off = function(type) {
+      if (listeners.has(type)) {
+        listeners.delete(type);
+      }
+    };
+
+    this.emit = function(type, data) {
+      if (listeners.has(type)) {
+        let handler =  listeners.get(type);
+        handler.call(this, data);
+      }
+    };
+
     this.onMessage = function(obj) {
 
       lastActivityAt = Date.now();
@@ -108,11 +132,12 @@ let QWorker = class {
 
         id = obj.qoper8.id;
         uuid = obj.qoper8.uuid;
-        if (obj.qoper8.workerInactivityCheckTime) delay = obj.qoper8.workerInactivityCheckTime; 
-        if (obj.qoper8.workerInactivityLimit) inactivityLimit = obj.qoper8.workerInactivityLimit; 
+        if (obj.qoper8.workerInactivityCheckInterval) delay = obj.qoper8.workerInactivityCheckInterval; 
+        if (obj.qoper8.workerInactivityLimit) inactivityLimit = obj.qoper8.workerInactivityLimit;
         if (obj.qoper8.handlersByMessageType) {
           handlersByMessageType = obj.qoper8.handlersByMessageType;
         }
+
         q.logging = obj.qoper8.logging;
         startTimer();
         q.log('new worker ' + id + ' started...');
@@ -122,6 +147,15 @@ let QWorker = class {
       }
 
       // all subsequent messages
+
+      if (!initialised) {
+        error = 'QOper8 Worker ' + id + ' has not been initialised';
+        q.emit('error', error);
+        return finished({
+          error: error,
+          originalMessage: obj
+        });
+      }
 
       if (!obj.qoper8 || !obj.qoper8.uuid) {
         error = 'Invalid message sent to QOper8 Worker ' + id;
@@ -146,6 +180,11 @@ let QWorker = class {
       delete dispObj.qoper8;
       q.log('Message received by worker ' + id + ': ' + JSON.stringify(dispObj, null, 2));
       q.emit('received', {message: dispObj});
+
+      if (obj.type === 'qoper8_terminate') {
+        shutdown();
+        return;
+      }
 
       if (!obj.type && !obj.handlerUrl) {
         error = 'No type or handler specified in message sent to worker ' + id;
@@ -178,6 +217,7 @@ let QWorker = class {
             });
           }
         }
+        noOfMessages++;
         let handler = handlers.get(obj.type);
         handler.call(q, obj, finished);
       }
@@ -196,25 +236,6 @@ let QWorker = class {
   log(message) {
     if (this.logging) {
       console.log(Date.now() + ': ' + message);
-    }
-  }
-
-  on(type, callback) {
-    if (!this.listeners.has(type)) {
-      this.listeners.set(type, callback);
-    }
-  }
-
-  off(type) {
-    if (this.listeners.has(type)) {
-      this.listeners.delete(type);
-    }
-  }
-
-  emit(type, data) {
-    if (this.listeners.has(type)) {
-      let handler =  this.listeners.get(type);
-      handler.call(this, data);
     }
   }
 };

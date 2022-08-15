@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>QOper8 Webworker Benchmark Test</title>
+  </head>
+
+  <body>
+    <script type="module" src="qoper8-ww-benchmark.js"></script>
+
+    <h2>QOper8 WebWorker Message Throughput Measurement</h2>
+
+    <div>Open the JavaScript Console to see Results</div>
+
+    <div>
+      <label for="noOfWorkers">Number of WebWorkers:</label><br>
+      <input type="number" id="noOfWorkers" min="1" max="12"><br>
+      <label for="noOfMessages">Number of Messages:</label><br>
+      <input type="number" id="noOfMessages" min="1"><br>
+      <label for="msgsPerBlock">Number of Messages per Block:</label><br>
+      <input type="number" id="msgsPerBlock" min="1"><br>
+      <label for="delayPerBlock">Delay (msec) between each Block of Messages:</label><br>
+      <input type="number" id="delayPerBlock" min="0"><br>
+      <button id="goBtn">Start</button>
+    </div>
+
+  </body>
+</html>
