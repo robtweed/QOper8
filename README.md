@@ -16,8 +16,8 @@ browser applications.
 QOper8 allows you to define a pool of WebWorkers, to which messages that you create are automatically
 dispatched and handled.  QOper8 manages the WebWorker pool for you automatically, bringing them into play and closing them down based on demand.  Qoper8 allows you to determine how long a WebWorker process will persist.
 
-*Note*: The inspiration for and design of QOper8 originates from the tried and tested [QEWD](https://github.com/robtweed/qewd) framework for Node.js.  At the heart of QEWD is a very similar queue/dispatch mechanism - 
-[ewd-qoper8](https://github.com/robtweed/ewd-qoper8).  *ewd-qoper8* maintains and manages the use of a pool of Node.js Child Processes, and is used in a very similar way to *QOper8*.  Qoper8 essentially brings the equivalent concept to the browser.
+*Note*: QOper8 closely follows the pattern and APIs of the Node.js-based 
+[*QOper8-wt*](https://github.com/robtweed/qoper8-wt) module for Worker Thread pool management. 
 
 
 QOper8 is unique for several reasons:
