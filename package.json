@@ -1,6 +1,6 @@
 {
   "name": "qoper8-ww",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Queue-Based WebWorker Pool Management Systems",
   "main": "/src/QOper8.js",
   "browser": "/src/QOper8.min.js",

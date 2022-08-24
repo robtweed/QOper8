@@ -23,13 +23,13 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-15 August 2022
+23 August 2022
 
  */
 
 // For full, unminified source code of QOper8Worker.js, see /src/QOper8Worker.js in repository
 
-let workerCode = `let QWorker=class{constructor(){this.logging=!1;let e=new Map,r=new Map,t=!1,o=!1,i=this,n=!1,s=!1,a=!1,l=6e4,g=18e4,p=new Map,d=!1,f=Date.now(),h=0,u=function(){i.log("Worker "+t+" sending request to shut down");clearInterval(QOper8Worker.timer),postMessage({qoper8:{shutdown:!0}}),i.emit("shutdown_signal_sent")},c=function(e){(e=e||{}).qoper8||(e.qoper8={}),e.qoper8.finished=!0,postMessage(e),i.emit("finished",e),n=!1,s&&u()};this.getMessageCount=function(){return h},this.on=function(r,t){e.has(r)||e.set(r,t)},this.off=function(r){e.has(r)&&e.delete(r)},this.emit=function(r,t){if(e.has(r)){e.get(r).call(this,t)}},this.onMessage=function(e){let m;if(f=Date.now(),n=!0,e.qoper8&&e.qoper8.init&&void 0!==e.qoper8.id)return o?(m="QOper8 Worker "+t+" has already been initialised",i.emit("error",m),c({error:m,originalMessage:e})):(t=e.qoper8.id,a=e.qoper8.uuid,e.qoper8.workerInactivityCheckInterval&&(l=e.qoper8.workerInactivityCheckInterval),e.qoper8.workerInactivityLimit&&(g=e.qoper8.workerInactivityLimit),e.qoper8.handlersByMessageType&&(p=e.qoper8.handlersByMessageType),i.logging=e.qoper8.logging,d=setInterval(function(){let e=Date.now()-f;i.log("Worker "+t+" inactive for "+e),i.log("Inactivity limit: "+g),e>g&&(n?(i.log("Worker "+t+" flagged for termination"),s=!0):u())},l),i.log("new worker "+t+" started..."),i.emit("started",{id:t}),o=!0,c());if(!o)return m="QOper8 Worker "+t+" has not been initialised",i.emit("error",m),c({error:m,originalMessage:e});if(!e.qoper8||!e.qoper8.uuid)return m="Invalid message sent to QOper8 Worker "+t,i.emit("error",m),c({error:m,originalMessage:e});if(e.qoper8.uuid!==a)return m="Invalid UUID on message sent to QOper8 Worker "+t,i.emit("error",m),c({error:m,originalMessage:e});let y=JSON.parse(JSON.stringify(e));if(delete e.qoper8.uuid,delete y.qoper8,i.log("Message received by worker "+t+": "+JSON.stringify(y,null,2)),i.emit("received",{message:y}),"qoper8_terminate"!==e.type){if(!e.type&&!e.handlerUrl)return m="No type or handler specified in message sent to worker "+t,i.emit("error",m),c({error:m,originalMessage:y});if(!e.type||!p.has(e.type))return m="No handler for messages of type "+e.type,i.log(m),i.emit("error",m),c({error:m,originalMessage:y});if(!r.has(e.type)){let o=p.get(e.type);i.log("fetching "+o);try{importScripts(o);let n=self.handler;r.set(e.type,n),i.emit("handler_imported",{handlerUrl:o})}catch(e){return m="Unable to load Handler Url "+o,i.log(m),i.log(JSON.stringify(e,null,2)),i.emit("error",m),c({error:m,originalMessage:y,workerId:t})}}h++,r.get(e.type).call(i,e,c)}else u()}}log(e){this.logging&&console.log(Date.now()+": "+e)}},QOper8Worker=new QWorker;onmessage=async function(e){QOper8Worker.onMessage(e.data)};`;
+let workerCode = `let QWorker=class{constructor(){this.logging=!1;let e=new Map,r=new Map,t=!1,o=!1,i=this,n=!1,s=!1,a=!1,g=6e4,l=18e4,p=new Map,d=!1,c=Date.now(),h=0,y=function(){i.log("Worker "+t+" sending request to shut down");d&&clearInterval(d),postMessage({qoper8:{shutdown:!0}}),i.emit("shutdown_signal_sent")},u=function(e){(e=e||{}).qoper8||(e.qoper8={}),e.qoper8.finished=!0,postMessage(e),i.emit("finished",e),n=!1,s&&y()};this.getMessageCount=function(){return h},this.on=function(r,t){e.has(r)||e.set(r,t)},this.off=function(r){e.has(r)&&e.delete(r)},this.emit=function(r,t){if(e.has(r)){e.get(r).call(this,t)}},this.onMessage=function(e){let f;if(c=Date.now(),n=!0,e.qoper8&&e.qoper8.init&&void 0!==e.qoper8.id)return o?(f="QOper8 Worker "+t+" has already been initialised",i.emit("error",f),u({error:f,originalMessage:e})):(t=e.qoper8.id,a=e.qoper8.uuid,e.qoper8.workerInactivityCheckInterval&&(g=e.qoper8.workerInactivityCheckInterval),e.qoper8.workerInactivityLimit&&(l=e.qoper8.workerInactivityLimit),e.qoper8.handlersByMessageType&&(p=e.qoper8.handlersByMessageType),i.logging=e.qoper8.logging,d=setInterval(function(){let e=Date.now()-c;i.log("Worker "+t+" inactive for "+e),i.log("Inactivity limit: "+l),e>l&&(n?(i.log("Worker "+t+" flagged for termination"),s=!0):y())},g),i.log("new worker "+t+" started..."),i.emit("started",{id:t}),o=!0,u());if(!o)return f="QOper8 Worker "+t+" has not been initialised",i.emit("error",f),u({error:f,originalMessage:e});if(!e.qoper8||!e.qoper8.uuid)return f="Invalid message sent to QOper8 Worker "+t,i.emit("error",f),u({error:f,originalMessage:e});if(e.qoper8.uuid!==a)return f="Invalid UUID on message sent to QOper8 Worker "+t,i.emit("error",f),u({error:f,originalMessage:e});let m={...e};if(delete e.qoper8.uuid,delete m.qoper8,i.log("Message received by worker "+t+": "+JSON.stringify(m,null,2)),i.emit("received",{message:m}),"qoper8_terminate"!==e.type){if(!e.type&&!e.handlerUrl)return f="No type or handler specified in message sent to worker "+t,i.emit("error",f),u({error:f,originalMessage:m});if(!e.type||!p.has(e.type))return f="No handler for messages of type "+e.type,i.log(f),i.emit("error",f),u({error:f,originalMessage:m});{if(!r.has(e.type)){let o=p.get(e.type);i.log("fetching "+o);try{importScripts(o);let n=self.handler;r.set(e.type,n),i.emit("handler_imported",{handlerUrl:o})}catch(e){return f="Unable to load Handler Url "+o,i.log(f),i.log(JSON.stringify(e,Object.getOwnPropertyNames(e))),i.emit("error",{error:f,caughtError:JSON.stringify(e,Object.getOwnPropertyNames(e))}),u({error:f,caughtError:JSON.stringify(e,Object.getOwnPropertyNames(e)),originalMessage:m,workerId:t})}}h++;let o=r.get(e.type);try{let r={...i};r.id=t,o.call(r,e,u)}catch(r){return f="Error running Handler Method for type "+e.type,i.log(f),i.log(JSON.stringify(r,Object.getOwnPropertyNames(r))),i.emit("error",{error:f,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r))}),d&&clearInterval(d),u({error:f,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r)),shutdown:!0,originalMessage:m,workerId:t})}}}else y()}}log(e){this.logging&&console.log(Date.now()+": "+e)}},QOper8Worker=new QWorker;onmessage=async function(e){QOper8Worker.onMessage(e.data)};`;
 
 // ******* QOper8 *****************
 
@@ -56,8 +56,8 @@ class QOper8 {
     if (obj.workerInactivityLimit) obj.workerInactivityLimit = obj.workerInactivityLimit * 60000;
 
     this.name = 'QOper8';
-    this.build = '2.5';
-    this.buildDate = '15 August 2022';
+    this.build = '2.6';
+    this.buildDate = '23 August 2022';
     this.logging = obj.logging || false;
     let poolSize = +obj.poolSize || 1;
     let maxPoolSize = obj.maxPoolSize || 32;
@@ -66,12 +66,15 @@ class QOper8 {
     let inactivityCheckInterval = obj.workerInactivityCheckInterval || 60000;
     let inactivityLimit = obj.workerInactivityLimit || (20 * 60000);
     this.handlersByMessageType = obj.handlersByMessageType || new Map();
+    let handlerTimeout = obj.handlerTimeout || false;
     let listeners = new Map();
 
     let uuid = uuidv4();
     let workers = new Map();
     let isAvailable = new Map();
-    let callbacks = new Map();
+    let pendingRequests = new Map();
+
+    let handlerTimers = new Map();
     let queue = [];
     let nextWorkerId = 0;
     let stopped = false;
@@ -146,10 +149,50 @@ class QOper8 {
     function sendMessageToWorker(worker) {
       if (queue.length === 0) return;
       let requestObj = queue.shift();
-      let id = worker.id;
-      callbacks.set(id, requestObj.qoper8.callback);
+      let id = +worker.id;
+      let pendingRecord = {
+        messageNo: requestObj.qoper8.messageNo,
+        request: requestObj,
+        callback: requestObj.qoper8.callback
+      };
+      pendingRequests.set(id, pendingRecord);
       delete requestObj.qoper8.callback;
+      delete requestObj.qoper8.messageNo;
       isAvailable.set(+id, false);
+
+      if (handlerTimeout) {
+        let timer = setTimeout(function() {
+
+          // return an error to the waiting request promise
+          //  include the original request, so it can be re-queued if desired
+
+          // terminate the Worker Thread as there's probably something wrong with it
+
+          if (pendingRequests.has(id)) {
+            let pendingRecord = pendingRequests.get(id);
+            let callback = pendingRecord.callback;
+            let requestObj = pendingRecord.request;
+            delete requestObj.qoper8;
+            let res = {
+              error: 'Worker Thread handler timeout exceeded',
+              originalRequest: requestObj
+            };
+            if (callback) callback(res, id);
+            pendingRequests.delete(id);
+            handlerTimers.delete(id);
+            // send shutdown signal to child process to ensure it
+            // stops its timer
+
+            sendMessage({
+              type: 'qoper8_terminate'
+            }, worker);
+
+          }
+
+        },handlerTimeout);
+        handlerTimers.set(id, timer);
+      } 
+
       sendMessage(requestObj, worker);
       q.emit('sentToWorker', {
         message: requestObj,
@@ -178,40 +221,65 @@ class QOper8 {
       }
 
       worker.onmessage = function(e) {
+
+        let id = +worker.id;
         let res = e.data;
 
-        let dispRes = JSON.parse(JSON.stringify(res));
+        let dispRes = {...res};
+        //let dispRes = JSON.parse(JSON.stringify(res));
         delete dispRes.qoper8;
 
         q.emit('replyReceived', {
           reply: dispRes,
-          workerId: worker.id
+          workerId: id
         });
 
-        q.log('response received from Worker: ' + worker.id);
+        q.log('response received from Worker: ' + id);
         q.log(JSON.stringify(dispRes, null, 2));
-
-        if (callbacks.has(worker.id)) {
-          let callback = callbacks.get(worker.id);
-          if (callback) callback(res, worker.id);
-          callbacks.delete(worker.id);
-        }
 
         if (res.qoper8) {
           if (res.qoper8.finished) {
-            isAvailable.set(+worker.id, true);
-            q.emit('worker' + worker.id + 'Available');
+
+            if (pendingRequests.has(id)) {
+              let pendingRecord = pendingRequests.get(id);
+              let originalMessageNo = pendingRecord.messageNo;
+              q.emit('QBackupDelete', originalMessageNo);
+              let callback = pendingRecord.callback;
+              if (callback) callback(res, id);
+            }
+
+            isAvailable.set(id, true);
+            q.emit('worker' + id + 'Available');
+            clearTimeout(handlerTimers.get(id));
+
+            if (res.error && res.shutdown) {
+              workers.delete(id);
+              isAvailable.delete(id);
+              pendingRequests.delete(id);
+              handlerTimers.delete(id)
+              q.emit('worker' + id + 'Terminated');
+              worker.terminate();
+              if (!stopped) processQueue();
+              return;
+            }
+
+            pendingRequests.delete(id);
+            isAvailable.set(id, true);
+            handlerTimers.delete(id)
             if (!stopped) processQueue();
           }
           else if (res.qoper8.shutdown) {
-            q.log('Master shutting down worker ' + worker.id);
-            workers.delete(worker.id);
-            q.emit('workerTerminated', worker.id);
-            q.emit('worker' + worker.id + 'Terminated');
+            q.log('Master shutting down worker ' + id);
+            workers.delete(id);
+            isAvailable.delete(id);
+            pendingRequests.delete(id);
+            handlerTimers.delete(id)
+            q.emit('workerTerminated', id);
+            q.emit('worker' + id + 'Terminated');
             worker.terminate();
           }
         }
-      }
+      };
 
       worker.id = nextWorkerId++;
       let msg = {
@@ -239,7 +307,14 @@ class QOper8 {
         return;
       }
       noOfMessages++;
+      obj.qoper8.messageNo = noOfMessages;
       queue.push(obj);
+      let req = {...obj};
+      delete req.qoper8;
+      q.emit('QBackupAdd', {
+        id: obj.qoper8.messageNo,
+        requestObject: req
+      });
       q.emit('addedToQueue', obj);
       processQueue();
     }

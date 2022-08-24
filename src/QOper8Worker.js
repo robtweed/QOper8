@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-15 August 2022
+23 August 2022
 
  */
 
@@ -54,7 +54,7 @@ let QWorker = class {
           shutdown: true
         }
       };
-      clearInterval(QOper8Worker.timer);
+      if (timer) clearInterval(timer);
       postMessage(obj);
       q.emit('shutdown_signal_sent');
     }
@@ -175,7 +175,8 @@ let QWorker = class {
         });
       }
 
-      let dispObj = JSON.parse(JSON.stringify(obj));
+      let dispObj = {...obj};
+      //let dispObj = JSON.parse(JSON.stringify(obj));
       delete obj.qoper8.uuid;
       delete dispObj.qoper8;
       q.log('Message received by worker ' + id + ': ' + JSON.stringify(dispObj, null, 2));
@@ -208,10 +209,14 @@ let QWorker = class {
           catch(err) {
             error = 'Unable to load Handler Url ' + handlerUrl;
             q.log(error);
-            q.log(JSON.stringify(err, null, 2));
-            q.emit('error', error);
+            q.log(JSON.stringify(err, Object.getOwnPropertyNames(err)));
+            q.emit('error', {
+              error: error,
+              caughtError: JSON.stringify(err, Object.getOwnPropertyNames(err))
+            });
             return finished({
               error: error,
+              caughtError: JSON.stringify(err, Object.getOwnPropertyNames(err)),
               originalMessage: dispObj,
               workerId: id
             });
@@ -219,7 +224,29 @@ let QWorker = class {
         }
         noOfMessages++;
         let handler = handlers.get(obj.type);
-        handler.call(q, obj, finished);
+        try {
+          let ctx = {...q};
+          ctx.id = id;
+          handler.call(ctx, obj, finished);
+        }
+        catch(err) {
+          error = 'Error running Handler Method for type ' + obj.type;
+          q.log(error);
+          q.log(JSON.stringify(err, Object.getOwnPropertyNames(err)));
+          q.emit('error', {
+            error: error,
+            caughtError: JSON.stringify(err, Object.getOwnPropertyNames(err))
+          });
+          // shutdown the Worker Thread to prevent any unwanted side-effects
+          if (timer) clearInterval(timer);
+          return finished({
+            error: error,
+            caughtError: JSON.stringify(err, Object.getOwnPropertyNames(err)),
+            shutdown: true,
+            originalMessage: dispObj,
+            workerId: id
+          });
+        }
       }
       else {
         error = 'No handler for messages of type ' + obj.type;
