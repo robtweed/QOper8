@@ -57,7 +57,7 @@ class QOper8 {
 
     this.name = 'QOper8';
     this.build = '2.6';
-    this.buildDate = '23 August 2022';
+    this.buildDate = '24 August 2022';
     this.logging = obj.logging || false;
     let poolSize = +obj.poolSize || 1;
     let maxPoolSize = obj.maxPoolSize || 32;

@@ -251,7 +251,7 @@ If your handler method includes asynchronous logic, ensure that the *finished()*
         }, 3000);
 
       };
-      export {handler};
+
 
 
 ## How Many Message Type Handlers Can You Use?
