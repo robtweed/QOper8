@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-23 August 2022
+24 August 2022
 
  */
 
@@ -166,7 +166,7 @@ class QOper8 {
           // return an error to the waiting request promise
           //  include the original request, so it can be re-queued if desired
 
-          // terminate the Worker Thread as there's probably something wrong with it
+          // terminate the WebWorker as there's probably something wrong with it
 
           if (pendingRequests.has(id)) {
             let pendingRecord = pendingRequests.get(id);
@@ -174,7 +174,7 @@ class QOper8 {
             let requestObj = pendingRecord.request;
             delete requestObj.qoper8;
             let res = {
-              error: 'Worker Thread handler timeout exceeded',
+              error: 'WebWorker handler timeout exceeded',
               originalRequest: requestObj
             };
             if (callback) callback(res, id);
@@ -351,19 +351,19 @@ class QOper8 {
           let msg = {type: 'qoper8_terminate'};
           sendMessage(msg, worker);
           await isStopped(id);
-          q.log('Worker Thread ' + id + ' has been stopped');
+          q.log('WebWorker ' + id + ' has been stopped');
         }
         else {
-          q.log('Waiting for Worker Thread ' + id + ' to become available');
+          q.log('Waiting for WebWorker ' + id + ' to become available');
           await isNowAvailable(id);
           let msg = {type: 'qoper8_terminate'};
           sendMessage(msg, worker);
           await isStopped(id);
-          q.log('Worker Thread ' + id + ' has been stopped');
+          q.log('WebWorker ' + id + ' has been stopped');
         }
       }
       q.emit('stop');
-      q.log('No Worker Threads are running.  QOper8 is no longer handling messages');
+      q.log('No WebWorkers are running.  QOper8 is no longer handling messages');
     };
 
     this.start = function() {

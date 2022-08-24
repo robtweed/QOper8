@@ -16,6 +16,8 @@ browser applications.
 QOper8 allows you to define a pool of WebWorkers, to which messages that you create are automatically
 dispatched and handled.  QOper8 manages the WebWorker pool for you automatically, bringing them into play and closing them down based on demand.  Qoper8 allows you to determine how long a WebWorker process will persist.
 
+Qoper8 makes use of the standard WebWorker APIs, and uses its standard *postMessage()* API for communication between the main QOper8 process and each WebWorker.  No other networking APIs or technologies are involved, and no external network traffic is conducted within QOper8's logic.
+
 *Note*: QOper8 closely follows the pattern and APIs of the Node.js-based 
 [*QOper8-wt*](https://github.com/robtweed/qoper8-wt) module for Worker Thread pool management. 
 
@@ -86,6 +88,8 @@ You start and configure QOper8 by creating an instance of the QOper8 class:
 - *logging*: if set to *true*, QOper8 will generate console.log messages for each of its critical processing steps within both the main process and every WebWorker process.  This is useful for debugging during development.  If not specified, it is set to *false*.
 
 - *disableLogging*: if set to *true*, QOper8's externally-accessible read/write *logging* property is deactivated, thereby preventing the risk of unauthorised message "snooping* using the browser's JavaScript console in a production system.  If not specified, it defaults to *false*.
+
+- *handlerTimeout*: Optional property allowing you to specify the length of time (in milliseconds) that the QOper8 main process will wait for a response from a WebWorker.  If a *handlerTimeout* is specified and it is exceeded (eg due to a handler method going wrong), then an error is returned and the WebWorker is shut down.  See later for details.
 
 
 You can optionally modify the parameters used by QOper8 for monitoring and shutting down inactive WebWorker processes, by using the following *options* properties:
@@ -194,14 +198,28 @@ QOper8 Message Handler Method script files must conform to a predetermined patte
       };
 
 
-The structure and contents of the response object are up to you.  
+The structure and contents of the response object are up to you.
 
-The *finished()* method is provided for you by the *QOper8Worker* module.  It:
+The *this* context within your handler method has the following properties and methods that you may find useful:
 
-- returns the response object (specified as its argument) to the main QOper8 process
-- instructs the main QOper8 process that processing has completed in the WebWorker, and, as a result, the WebWorker is flagged as *available* for handling any new incoming/queued messages
-- finally tells QOper8 to process the first message in its queue (unless it's empty)
+- *id*: the WebWorker Id, as allocated by the QOper8 main process
+- *getMessageCount()*: returns the number of messages so far handled by the WebWorker
+- *on()*: allows you to handle events within your handler
+- *off()*: deletes an event handler
+- *emit()*: generates a custom event within your handler
+- *log()*: if logging is enabled in QOper8, then a time-stamped *console.log()* message can be created using this method
 
+The *on()*, *off()*, *emit()* and *log()* methods are [described later in this document](#events).
+
+
+The second argument of your handler method - the *finished()* method - is provided for you by the *QOper8* Worker module.  It is used to:
+
+- return the response object (specified as its argument) to the main *QOper8* process
+- instruct the main *QOper8* process that processing has completed in the WebWorker, and, as a result, the WebWorker is flagged as *available* for handling any new incoming/queued messages
+- tell *QOper8* to process the first message in its queue (unless it's empty)
+
+
+Your handler **MUST** always invoke the *finished()* when completed, even if you have no response to return;  Failure to invoke the *finished()* method will leave the WebWorker unavailable for use for handling other queued messages (unless a *handlerTimeout* was defined when instantiating QOper8, in which case the WebWorker will be terminated once this is exceeded).
 
 For example:
 
@@ -216,6 +234,34 @@ For example:
         });
 
       };
+
+If your handler method includes asynchronous logic, ensure that the *finished()* method is invoked only when your asynchronous logic has completed, otherwise the WebWorker will be relased back to the available pool prematurely, eg:
+
+      self.handler = function(obj, finished) {
+
+        // demonstration of how to handle asynchronous logic within your handler
+
+        setTimeout(function() {
+
+          finished({
+            processing: 'Message processing done!',
+            data: obj.data,
+            time: Date.now()
+          });
+        }, 3000);
+
+      };
+      export {handler};
+
+
+## How Many Message Type Handlers Can You Use?
+
+As many as you like!  Each WebWorker will automatically and dynamically load and cache the handler methods you've specified as it receives incoming requests.  Each WebWorker can therefore handle as many different message types as you wish.  
+
+You don't need separate WebWorkers for handling different message types, and nor do you need multiple instances of QOper8 to handle different types of messages and traffic.
+
+Simply write your message handlers, tell QOper8 where to load them from and leave QOper8 to use them!
+
 
 
 ## Simple Example
@@ -313,10 +359,164 @@ It's entirely up to you.  Each WebWorker in your pool will be able to invoke you
 - If you use just a single WebWorker, your queued messages will be handled individually, one at a time, in strict chronological sequence.  This can be advantageous for certain kinds of activity where you need strict control over the serialisation of activities.  The downside is that the overall throughput will be typically less than if you had a larger WebWorker pool.
 
 
+## *QOper8* Fault Resilience
+
+QOper8 is designed to be robust and allow you to control and handle unforseen events.
+
+### Handling Errors in WebWorkers
+
+The most likely error you'll experience is where a WebWorker Message Handler method has crashed due to some fault within its logic.  If this happens, *QOper8* will:
+
+- return an error object to your awaiting *send()* Promise. This object also includes the original queued request object, allowing you to re-queue it and re-handle it if this is a sensible and/or feasible option for you.  For example, if you sent a request:
+
+
+      let res = await qoper8.send({
+        type: 'test',
+        hello: 'world'
+      });
+
+
+  If the message hander for a message of type *test* crashed, then *res* would be returned as:
+
+      {
+        "error": "Error running Handler Method for type test",
+        "caughtError": "{\"stack\":\"ReferenceError: y is not defined\\n...etc}",
+        "originalMessage": {
+          "type": "test",
+          "hello": "world"
+        },
+        "workerId": 0,
+        "qoper8": {
+          "finished": true
+        }
+      }
+
+  The *caughtError* is a stringified copy of the error caught by QOper8's *try..catch* around the handler that failed.  This should provide you with the information needed to debug the issue.
+
+  The original request object is returned to you under the *originalMessage* property.  It is up to you to decide what, if anything you want to do with it.
+
+  The *workerId* and *qoper8* properties are primarily for internal use within QOper8.
+
+
+- QOper8 will terminate the WebWorker in which the error occurred and remove it from QOper8's available pool.  This is to prevent any unwanted side-effects from any delayed asynchronous logic that may be running within the WebWorker despite the error that occurred.  
+
+  Note that QOper8 will always automatically start new WebWorkers if it needs to, and this, coupled with the fact that a QOper8 WebWorker only ever handles a single message at a time, means that shutting down WebWorkers is a safe thing for QOper8 to do.
+
+### Handling a Handler that Never Completes
+
+By default, if you QOper8 WebWorker handler method failed to complete (eg due to an infinite loop, or because it was hanging awaiting a resource that was unavailable), then that WebWorker will remain unavailable to QOper8.  This will reduce throughtput, and if the same situation occurs in other WebWorkers, you could end up with a stalled system with no available WebWorkers in your pool.
+
+To handle such situations, you should specify a *handlerTimeout* when instantiating QOper8.  The *handlerTimeout* is specified in milliseconds, eg the following would instruct QOper8 to force a WebWorker timeout if a handler took longer than a minute to return its results:
+
+      let qoper8 = new QOper8({
+        handlersByMessageType: new Map([
+          ['myMessage', './myMessage.js']
+        ])
+        poolSize: 2,
+        handlerTimeout: 60000
+      });
+
+
+If a handler method exceeds this timeout, QOper8 will:
+
+- return an error response to the awaiting *send()* Promise.  The error response object includes the original request object.  It is for you to determine what to do with the original request object, for example you may decide to re-queue it.
+
+  For example, if you sent a request:
+
+      let res = await qoper8.send({
+        type: 'myMessage',
+        hello: 'world'
+      });
+
+and the *test* Message Handler method failed to respond within a minute, then the value of *res* that was returned would be: 
+
+
+      {
+        error: 'WebWorker handler timeout exceeded',
+        originalRequest: {
+          type: 'myMessage',
+          hello: 'world'
+        }
+      };
+
+- terminate the WebWorker, effectively stopping any processing that was taking place in the WebWorker.
+
+  Note that QOper8 will always automatically start new WebWorkers if it needs to, and this, coupled with the fact that a QOper8 WebWorker only ever handles a single message at a time, means that shutting down WebWorkers is a safe thing for QOper8 to do.
+
+
+### Handling a Crash in the Main Browser Process
+
+If the main Browser process experiences an unforeseen fatal crash, you will not only lose the currently executing WebWorkers, but you'll also lose QOper8's queue since, for performance reasons, it is an in-memory array structure.
+
+Under most circumstances, the QOper8 queue should be empty, but in a busy system this may not be the case, and if you are running a safety-critical system, the resilience of the queue may be an important/vital factor, in which case you need to be able to restore any requests that may have been in the queue and also any requests that had not been handled to completion within Worker Threads.
+
+#### Maintaining a Backup of the Queue
+
+QOper8 does not, itself, provide a resilient queue, but it does emit events that you can optionally use to provide your own resilience, eg allowing you to maintain an active copy of the queue in the browser's *indexedDB* database.  The two key events you can use are:
+
+- *QBackupAdd*: emitted when a message request object is added to the queue, either via QOper8's *send()* or *message()* APIs.  This event provides you with an object that includes:
+
+  - *id*: a unique identifier for the queued request (an incrementing integer)
+  - *requestObject*: a copy of the queued request object
+
+  You can use this information to save a copy of the queued message to a key/value store.
+
+- *QBackupDelete*: emitted when a message has finished processing in a WebWorker.  This event provides you with the *id* of the finished message, allowing you to delete the copy of the message from a key/value store
+
+
+For example:
+
+      let qoper8 = new QOper8({
+        handlersByMessageType: new Map([
+          ['myMessage', './myMessage.js']
+        ])
+        poolSize: 2,
+        handlerTimeout: 60000
+      });
+
+      qoper8.on('QBackupAdd', function(obj) {
+        let key = obj.id;
+        let value = obj.requestObject;
+        // save to a key/value store
+      });
+
+      qoper8.on('QBackupDelete', function(key) {
+        // delete from key/value store
+      });
+
+Note that the performance of your queue backup event handlers may adversely affect QOper8's throughput.  Use asynchronous logic for database maintenance if possible.  Also note that any runtime errors in your queue backup event handlers may bring down the QOper8 process, so wrap your logic inside try...catch blocks.
+
+#### Recovery
+
+If the main browser process experiences an unforeseen crash, it is your responsibility to recreate the queue from your backup storage.  To do this, restart QOper8 and then simply re-queue the messages from your database copy, using, eg, the following pseudo-code:
+
+      for (const requestObject in yourDatabase) {
+
+        // use QOper8's message API to requeue the request object:
+        qoper8.message(requestObject);
+
+        delete requestObject from yourDatabase;
+      }
+
+Note that the request ids that are used as keys are integers whose values reflect the original queued message sequence.
+
+If QOper8 is restarted, the request id counter is reset to zero.
+
+QOper8 will immediately begin processing requests as they are added to the queue, and will begin firing the corresponding *QBackupAdd* and *QBackupDelete* events as the requests are queued and completed, so you should probably shouldn't rebuild the QOper8 queue directly from your active backup store to prevent any unwanted synchronisation issues within your backup store.
+
+Note that QOper8's approach to resilience means that its throughput is not constrained by the performance of a separate database-based queue.  You should, however, ensure that your storage logic within your backup event handlers is asynchronous, to avoid blocking QOper8's main process.
+
+Note also that it is your responsibility to ensure the integrity of your backup queue.  QOper8 can only ensure that you are provided with the correct signals at the appropriate times to allow you to maintain an accurate representation of the currently active queue and uncompleted requests.
+
+Note also that, under the terms of QOper8's Apache2 license, you use QOper8 at your own risk and no warranties are provided.
+
+
+
 ## Benchmarking QOper8 Throughput
 
-To get an idea of the throughput performance of QOper8 on different browsers, try out our simple 
-[QOper8 Benchmarking Application](https://robtweed.github.io/QOper8/benchmark).  
+The performance of *QOper8* will depend on many factors, in particular the size of your request and response objects, and also the amount and complexity of the processing logic within your WebWorker Handler methods.  It will also be impacted if your Handler logic includes access to external resources (eg via REST or other external networking APIs).
+
+However, to get an idea of likely best-case throughput performance of *QOper8* on a particular Browser, you can use the benchmarking test script that is included in the [*/benchmark*](./benchmark) folder of this repository.  
 
 This application allows you to specify the WebWorker Pool Size, and you then set up the parameters for generating a stream of identical messages that will be handled by a simple almost "do-nothing" message handler.  
 

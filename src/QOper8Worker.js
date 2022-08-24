@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-23 August 2022
+24 August 2022
 
  */
 
@@ -237,7 +237,7 @@ let QWorker = class {
             error: error,
             caughtError: JSON.stringify(err, Object.getOwnPropertyNames(err))
           });
-          // shutdown the Worker Thread to prevent any unwanted side-effects
+          // shutdown the WebWorker to prevent any unwanted side-effects
           if (timer) clearInterval(timer);
           return finished({
             error: error,
