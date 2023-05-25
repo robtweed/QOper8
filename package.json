@@ -1,6 +1,6 @@
 {
   "name": "qoper8-ww",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "description": "Queue-Based WebWorker Pool Management Systems",
   "main": "/src/QOper8.js",
   "browser": "/src/QOper8.min.js",
@@ -15,7 +15,7 @@
     "type": "git",
     "url": "git+https://github.com/robtweed/QOper8.git"
   },
-  "author": "Rob Tweed, M/Gateway Developments Ltd",
+  "author": "Rob Tweed, MGateway Ltd",
   "license": "Apache-2.0",
   "dependencies": {
   },

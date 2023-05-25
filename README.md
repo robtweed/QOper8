@@ -1,7 +1,7 @@
 # QOper8: Queue-based WebWorker Pool Manager
  
 Rob Tweed <rtweed@mgateway.com>  
-23 June 2022, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
+25 May 2023, MGateway Ltd [https://www.mgateway.com](https://www.mgateway.com)  
 
 Twitter: @rtweed
 
@@ -755,11 +755,11 @@ Note that you cannot access the browser DOM from a WebWorker.  Instead, use the 
 
 ## License
 
- Copyright (c) 2022 M/Gateway Developments Ltd,                           
+ Copyright (c) 2023 MGateway Ltd,                           
  Redhill, Surrey UK.                                                      
  All rights reserved.                                                     
                                                                            
-  http://www.mgateway.com                                                  
+  https://www.mgateway.com                                                  
   Email: rtweed@mgateway.com                                               
                                                                            
                                                                            
