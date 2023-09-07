@@ -234,7 +234,6 @@ class QOper8 {
       }
       else {
         let blobUrl = q.createUrl(workerCode);
-        let worker;
         if (blobUrl) {
           worker = new Worker(blobUrl);
         }
