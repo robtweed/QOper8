@@ -11,7 +11,7 @@ Google Group for discussions, support, advice etc: [http://groups.google.co.uk/g
 ## What is QOper8?
 
 QOper8 is a JavaScript Module that provides a simple yet powerful way to use and manage WebWorkers in your
-browser applications.
+browser or Bun.js applications.
 
 QOper8 allows you to define a pool of WebWorkers, to which messages that you create are automatically
 dispatched and handled.  QOper8 manages the WebWorker pool for you automatically, bringing them into play and closing them down based on demand.  Qoper8 allows you to determine how long a WebWorker process will persist.
@@ -40,6 +40,11 @@ QOper8 should work on all modern browsers. The only dependencies are that the br
 - WebWorkers
 - async/await
 - ES6 Modules
+
+
+## Will QOper8 Work with Bun.js?
+
+Yes, you can use *QOper8* to manage a pool of Bun.js WebWorker threads.
 
 
 ## Live Demo
@@ -73,6 +78,15 @@ Then you can import the QOper8 class:
         import {QOper8} from 'qoper8-ww';
 
 
+### Install in Bun.js
+
+        bun install qoper8-ww
+
+In your Bun.js script file, import the QOper8 class:
+
+        import {QOper8} from 'qoper8-ww';
+
+
 ## Starting/Configuring QOper8
 
 You start and configure QOper8 by creating an instance of the QOper8 class:
@@ -84,6 +98,8 @@ You start and configure QOper8 by creating an instance of the QOper8 class:
 - *poolSize*: the maximum number of WebWorker processes that QOper8 will start and run concurrently (Note that WebWorkers are started dynamically on demand.  If not specified, the poolSize will be 1: ie all messages will be handled by a single WebWorker
 
 - *handlersByMessageType*: a JavaScript Map of each message type to its respective handler method module URL.  Message types can be any string value
+
+  If you are using Bun.js, use the full filepath as the URL value.
 
 - *logging*: if set to *true*, QOper8 will generate console.log messages for each of its critical processing steps within both the main process and every WebWorker process.  This is useful for debugging during development.  If not specified, it is set to *false*.
 
@@ -183,6 +199,8 @@ So, as you can see, everything related to the WebWorker processes and the messag
 
 ## The Message Handler Method Script
 
+### Browser Applications
+
 QOper8 Message Handler Method script files must conform to a predetermined pattern as follows:
 
       self.handler = function(messageObj, finished) {
@@ -197,6 +215,27 @@ QOper8 Message Handler Method script files must conform to a predetermined patte
 
       };
 
+### Bun.js Applications
+
+
+QOper8 Message Handler Method script files must conform to a predetermined pattern as follows,
+exporting your handler function via an object named *handler*:
+
+      const handler = function(messageObj, finished) {
+
+        // your logic for processing the incoming message object 
+
+        // as a result of your processing, create a response object (responseObj)
+
+        // when processing is complete, you MUST invoke the finished() method and exit the handler method:
+
+        return finished(responseObj);
+
+      };
+
+      export {handler};
+
+### All Applications
 
 The structure and contents of the response object are up to you.
 
@@ -221,7 +260,7 @@ The second argument of your handler method - the *finished()* method - is provid
 
 Your handler **MUST** always invoke the *finished()* when completed, even if you have no response to return;  Failure to invoke the *finished()* method will leave the WebWorker unavailable for use for handling other queued messages (unless a *handlerTimeout* was defined when instantiating QOper8, in which case the WebWorker will be terminated once this is exceeded).
 
-For example:
+For example, if you are using *QOper8* in a browser application:
 
       self.handler = function(obj, finished) {
 
@@ -264,7 +303,7 @@ Simply write your message handlers, tell QOper8 where to load them from and leav
 
 
 
-## Simple Example
+## Simple Example: Browser
 
 This simple example creates a pool of 1 WebWorker (the default configuration) and allows you to process a message of type *myMessage*
 
@@ -343,6 +382,56 @@ You should see the *console.log()* messages generated at each step by QOper8 as 
 
 If you now leave the web page alone, you'll see the messages generated when it periodically checks the WebWorker process for inactivity.  Eventually you'll see it being shut down automatically.
 
+
+## Simple Example: Bun.js
+
+### main.js
+
+        import { QOper8 } from "qoper8-ww";
+        
+        let qoper8 = new QOper8({
+          logging: true,
+          poolSize: 2,
+          handlersByMessageType: new Map([
+            ['myMessage', '/home/pi/bun/myMessageHandler.js']
+          ])
+        });
+
+        let res = await qoper8.send({
+          type: 'myMessage',
+          data: {
+            hello: 'world'
+          }
+        });
+
+        console.log('Response received from WebWorker:');
+        console.log(res);
+
+
+### myMessageHandler.js
+
+        let handler = function(obj, finished) {
+        
+          // simple example that just echoes back the incoming message
+        
+          console.log('handling incoming message in worker ' + this.id);
+          console.log('Message count: ' + this.getMessageCount());
+
+          finished({
+            processing: 'Message processing done!',
+            data: obj.data,
+            time: Date.now(),
+            handledByWorker: this.id
+          });
+        };
+
+        export {handler};
+
+Run it using:
+
+        bun main.js
+
+----
 
 ## How Many WebWorkers Should I Use?
 
@@ -510,9 +599,11 @@ Note also that it is your responsibility to ensure the integrity of your backup 
 
 Note also that, under the terms of QOper8's Apache2 license, you use QOper8 at your own risk and no warranties are provided.
 
-
+----
 
 ## Benchmarking QOper8 Throughput
+
+### Browser Usage
 
 The performance of *QOper8* will depend on many factors, in particular the size of your request and response objects, and also the amount and complexity of the processing logic within your WebWorker Handler methods.  It will also be impacted if your Handler logic includes access to external resources (eg via REST or other external networking APIs).
 
@@ -543,7 +634,49 @@ At the end of each run, the application will display, in the JavaScript console:
 The results can be pretty interesting, particularly comparing throughput for different browsers on the same hardware platform.  For example, you will probably find that Firefox is significantly faster than Safari.
 
 
+### Bun.js Usage
+
+The performance of *QOper8* will depend on many factors, in particular the size of your request and response objects, and also the amount and complexity of the processing logic within your WebWorker Handler methods.  It will also be impacted if your Handler logic includes access to external resources.
+
+However, to get an idea of likely best-case throughput performance of *QOper8* with Bun.js, you can use the benchmarking test script that is included in the [*/bun/benchmark*](./bun/benchmark) folder of this repository.
+
+Copy the two files to a folder on your Bun.js system.  Change the path to the worker script file in
+the *benchmark.js* file.
+
+Run the benchmark using:
+
+      bun benchmark.js
+
+
+The script allows you to specify the WebWorker Pool Size, and you then set up the parameters for generating a stream of identical messages that will be handled by a simple almost "do-nothing" message handler. Simply edit the
+appropriate values at the top of the *benchmark.js* file.
+
+You specify the total number of messages you want to generate, eg 100,000, but rather than the script simply adding the whole lot to the QOper8 queue in one go, you define how to generate batches of messages that get added to the queue.  So you define:
+
+- the batch size (*blockLength*), eg 300 messages at a time
+- the delay time between batches (*delay*), eg 20ms
+
+This avoids the performance overheads of JavaScript handling a potentially massive array which could potententially adversely affect the performance throughput.  
+
+The trick is to create a balance of batch size and delay to maintain a sustainably-sized queue.  The application reports its work and results to the browser's JavaScript console, and will tell you if the queue increases with each message batch, or if the queue is exhausted between batches.
+
+Keep tweaking the delay time:
+
+- increase it if the queue keeps expanding with each new batch
+- decrease it if the queue is getting exhausted at each batch
+
+At the end of each run, the script will display:
+
+- the total time taken
+- the throughtput rate (messages handled per second)
+- the number of messages handled by each of the WebWorkers in the pool you specified.
+
+----
+
+
 ## Optionally Packaging Your Message Handler Code
+
+Note: the following only applies to *QOper8* browser applications.  It does not apply when using Bun.js.
 
 As you'll have seen above, the default way in which QOper8 dynamically loads each of your Message Handler script files is via a corresponding URL that you define in the QOper8 constructor's *handlersByMessageType* property.
 

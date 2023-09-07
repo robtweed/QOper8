@@ -23,13 +23,13 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-24 August 2022
+7 September 2023
 
  */
 
 // For full, unminified source code of QOper8Worker.js, see /src/QOper8Worker.js in repository
 
-let workerCode = `let QWorker=class{constructor(){this.logging=!1;let e=new Map,r=new Map,t=!1,o=!1,i=this,n=!1,s=!1,a=!1,g=6e4,l=18e4,p=new Map,d=!1,c=Date.now(),h=0,y=function(){i.log("Worker "+t+" sending request to shut down");d&&clearInterval(d),postMessage({qoper8:{shutdown:!0}}),i.emit("shutdown_signal_sent")},u=function(e){(e=e||{}).qoper8||(e.qoper8={}),e.qoper8.finished=!0,postMessage(e),i.emit("finished",e),n=!1,s&&y()};this.getMessageCount=function(){return h},this.on=function(r,t){e.has(r)||e.set(r,t)},this.off=function(r){e.has(r)&&e.delete(r)},this.emit=function(r,t){if(e.has(r)){e.get(r).call(this,t)}},this.onMessage=function(e){let f;if(c=Date.now(),n=!0,e.qoper8&&e.qoper8.init&&void 0!==e.qoper8.id)return o?(f="QOper8 Worker "+t+" has already been initialised",i.emit("error",f),u({error:f,originalMessage:e})):(t=e.qoper8.id,a=e.qoper8.uuid,e.qoper8.workerInactivityCheckInterval&&(g=e.qoper8.workerInactivityCheckInterval),e.qoper8.workerInactivityLimit&&(l=e.qoper8.workerInactivityLimit),e.qoper8.handlersByMessageType&&(p=e.qoper8.handlersByMessageType),i.logging=e.qoper8.logging,d=setInterval(function(){let e=Date.now()-c;i.log("Worker "+t+" inactive for "+e),i.log("Inactivity limit: "+l),e>l&&(n?(i.log("Worker "+t+" flagged for termination"),s=!0):y())},g),i.log("new worker "+t+" started..."),i.emit("started",{id:t}),o=!0,u());if(!o)return f="QOper8 Worker "+t+" has not been initialised",i.emit("error",f),u({error:f,originalMessage:e});if(!e.qoper8||!e.qoper8.uuid)return f="Invalid message sent to QOper8 Worker "+t,i.emit("error",f),u({error:f,originalMessage:e});if(e.qoper8.uuid!==a)return f="Invalid UUID on message sent to QOper8 Worker "+t,i.emit("error",f),u({error:f,originalMessage:e});let m={...e};if(delete e.qoper8.uuid,delete m.qoper8,i.log("Message received by worker "+t+": "+JSON.stringify(m,null,2)),i.emit("received",{message:m}),"qoper8_terminate"!==e.type){if(!e.type&&!e.handlerUrl)return f="No type or handler specified in message sent to worker "+t,i.emit("error",f),u({error:f,originalMessage:m});if(!e.type||!p.has(e.type))return f="No handler for messages of type "+e.type,i.log(f),i.emit("error",f),u({error:f,originalMessage:m});{if(!r.has(e.type)){let o=p.get(e.type);i.log("fetching "+o);try{importScripts(o);let n=self.handler;r.set(e.type,n),i.emit("handler_imported",{handlerUrl:o})}catch(e){return f="Unable to load Handler Url "+o,i.log(f),i.log(JSON.stringify(e,Object.getOwnPropertyNames(e))),i.emit("error",{error:f,caughtError:JSON.stringify(e,Object.getOwnPropertyNames(e))}),u({error:f,caughtError:JSON.stringify(e,Object.getOwnPropertyNames(e)),originalMessage:m,workerId:t})}}h++;let o=r.get(e.type);try{let r={...i};r.id=t,o.call(r,e,u)}catch(r){return f="Error running Handler Method for type "+e.type,i.log(f),i.log(JSON.stringify(r,Object.getOwnPropertyNames(r))),i.emit("error",{error:f,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r))}),d&&clearInterval(d),u({error:f,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r)),shutdown:!0,originalMessage:m,workerId:t})}}}else y()}}log(e){this.logging&&console.log(Date.now()+": "+e)}},QOper8Worker=new QWorker;onmessage=async function(e){QOper8Worker.onMessage(e.data)};`;
+let workerCode = `let QWorker=class{constructor(){this.logging=!1;let e=new Map,r=new Map,t=!1,o=!1,i=this,n=!1,a=!1,s=!1,g=6e4,l=18e4,p=new Map,u=!1,c=Date.now(),d=0,y=function(){i.log("Worker "+t+" sending request to shut down");u&&clearInterval(u),postMessage({qoper8:{shutdown:!0}}),i.emit("shutdown_signal_sent")},f=function(e){(e=e||{}).qoper8||(e.qoper8={}),e.qoper8.finished=!0,postMessage(e),i.emit("finished",e),n=!1,a&&y()};this.getMessageCount=function(){return d},this.on=function(r,t){e.has(r)||e.set(r,t)},this.off=function(r){e.has(r)&&e.delete(r)},this.emit=function(r,t){if(e.has(r)){e.get(r).call(this,t)}},this.onMessage=async function(e){let m;if(c=Date.now(),n=!0,e.qoper8&&e.qoper8.init&&void 0!==e.qoper8.id){if(o)return m="QOper8 Worker "+t+" has already been initialised",i.emit("error",m),f({error:m,originalMessage:e});if("undefined"!=typeof Bun&&e.qoper8.onStartupModule){let r;try{let{onStartupModule:o}=await import(e.qoper8.onStartupModule);r=o}catch(r){return m="Unable to load onStartup customisation module "+e.qoper8.onStartupModule,i.log(m),i.log(JSON.stringify(r,Object.getOwnPropertyNames(r))),i.emit("error",{error:m,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r))}),f({error:m,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r)),originalMessage:e,workerId:t})}try{r.call(i,e.qoper8.onStartupArguments)}catch(r){return m="Error running onStartup customisation module "+e.qoper8.onStartupModule,i.log(m),i.log(JSON.stringify(r,Object.getOwnPropertyNames(r))),i.emit("error",{error:m,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r))}),f({error:m,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r)),originalMessage:e,workerId:t})}}return t=e.qoper8.id,s=e.qoper8.uuid,e.qoper8.workerInactivityCheckInterval&&(g=e.qoper8.workerInactivityCheckInterval),e.qoper8.workerInactivityLimit&&(l=e.qoper8.workerInactivityLimit),e.qoper8.handlersByMessageType&&(p=e.qoper8.handlersByMessageType),i.logging=e.qoper8.logging,u=setInterval(function(){let e=Date.now()-c;i.log("Worker "+t+" inactive for "+e),i.log("Inactivity limit: "+l),e>l&&(n?(i.log("Worker "+t+" flagged for termination"),a=!0):y())},g),i.log("new worker "+t+" started..."),i.emit("started",{id:t}),o=!0,f()}if(!o)return m="QOper8 Worker "+t+" has not been initialised",i.emit("error",m),f({error:m,originalMessage:e});if(!e.qoper8||!e.qoper8.uuid)return m="Invalid message sent to QOper8 Worker "+t,i.emit("error",m),f({error:m,originalMessage:e});if(e.qoper8.uuid!==s)return m="Invalid UUID on message sent to QOper8 Worker "+t,i.emit("error",m),f({error:m,originalMessage:e});let h={...e};if(delete e.qoper8.uuid,delete h.qoper8,i.log("Message received by worker "+t+": "+JSON.stringify(h,null,2)),i.emit("received",{message:h}),"qoper8_terminate"!==e.type){if(!e.type&&!e.handlerUrl)return m="No type or handler specified in message sent to worker "+t,i.emit("error",m),f({error:m,originalMessage:h});if(!e.type||!p.has(e.type))return m="No handler for messages of type "+e.type,i.log(m),i.emit("error",m),f({error:m,originalMessage:h});{if(!r.has(e.type)){let o=p.get(e.type);o.module&&(o=o.module),i.log("fetching "+o);try{let n;if("undefined"!=typeof Bun){let{handler:e}=await import(o);n=e}else importScripts(o),n=self.handler;r.set(e.type,n),i.emit("handler_imported",{handlerUrl:o})}catch(e){return m="Unable to load Handler Url "+o,i.log(m),i.log(JSON.stringify(e,Object.getOwnPropertyNames(e))),i.emit("error",{error:m,caughtError:JSON.stringify(e,Object.getOwnPropertyNames(e))}),f({error:m,caughtError:JSON.stringify(e,Object.getOwnPropertyNames(e)),originalMessage:h,workerId:t})}}d++;let o=r.get(e.type);try{let r={...i};r.id=t,o.call(r,e,f)}catch(r){return m="Error running Handler Method for type "+e.type,i.log(m),i.log(JSON.stringify(r,Object.getOwnPropertyNames(r))),i.emit("error",{error:m,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r))}),u&&clearInterval(u),f({error:m,caughtError:JSON.stringify(r,Object.getOwnPropertyNames(r)),shutdown:!0,originalMessage:h,workerId:t})}}}else y()}}log(e){this.logging&&console.log(Date.now()+": "+e)}},QOper8Worker=new QWorker;onmessage=async function(e){QOper8Worker.onMessage(e.data)};`;
 
 // ******* QOper8 *****************
 
@@ -39,7 +39,7 @@ class QOper8 {
     obj = obj || {};
 
     function uuidv4() {
-      if (window.location.protocol === 'https:') {
+      if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
         return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
           (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
         );
@@ -56,8 +56,8 @@ class QOper8 {
     if (obj.workerInactivityLimit) obj.workerInactivityLimit = obj.workerInactivityLimit * 60000;
 
     this.name = 'QOper8';
-    this.build = '2.6';
-    this.buildDate = '24 August 2022';
+    this.build = '3.0';
+    this.buildDate = '7 September 2023';
     this.logging = obj.logging || false;
     let poolSize = +obj.poolSize || 1;
     let maxPoolSize = obj.maxPoolSize || 32;
@@ -67,6 +67,9 @@ class QOper8 {
     let inactivityLimit = obj.workerInactivityLimit || (20 * 60000);
     this.handlersByMessageType = obj.handlersByMessageType || new Map();
     let handlerTimeout = obj.handlerTimeout || false;
+    let onStartup = obj.onStartup || {};
+    let onStartupModule = onStartup.module;
+    let onStartupArguments = onStartup.arguments;
     let listeners = new Map();
 
     let uuid = uuidv4();
@@ -86,6 +89,22 @@ class QOper8 {
         console.log(Date.now() + ': ' + message);
       }
     };
+
+    this.setPoolSize = function(size) {
+      if (+size > 0 && +size < (maxPoolSize + 1)) {
+        poolSize = +size;
+      }
+    }
+
+
+    this.setOnStartupModule = function(obj) {
+      // should be an object:  {module: '/path/to/module', arguments: {key1: value1, ...etc} }
+      if (!onStartupModule) {
+        obj = obj || {};
+        onStartupModule = obj.module;
+        onStartupArguments = obj.arguments;
+      }
+    }
 
     this.getMessageCount = function() {
       return noOfMessages;
@@ -207,17 +226,25 @@ class QOper8 {
     }
 
     function startWorker() {
-      let blobUrl = q.createUrl(workerCode);
       let worker;
-      if (blobUrl) {
-        worker = new Worker(blobUrl);
+
+      if (typeof Bun !== 'undefined') {
+        const workerURL = new URL('QOper8Worker.js', import.meta.url).href;
+        worker = new Worker(workerURL);
       }
       else {
-        // if loaded in Node.js to allow it to load without an error
-        worker = {};
-        worker.postMessage = function(obj) {
-          //console.log('simulated postMessage for ' + JSON.stringify(obj))
-        };
+        let blobUrl = q.createUrl(workerCode);
+        let worker;
+        if (blobUrl) {
+          worker = new Worker(blobUrl);
+        }
+        else {
+          // if loaded in Node.js to allow it to load without an error
+          worker = {};
+          worker.postMessage = function(obj) {
+            //console.log('simulated postMessage for ' + JSON.stringify(obj))
+          };
+        }
       }
 
       worker.onmessage = function(e) {
@@ -289,7 +316,9 @@ class QOper8 {
           handlersByMessageType: q.handlersByMessageType,
           workerInactivityCheckInterval: inactivityCheckInterval,
           workerInactivityLimit: inactivityLimit,
-          logging: q.logging
+          logging: q.logging,
+          onStartupModule: onStartupModule,
+          onStartupArguments: onStartupArguments
         }
       };
       sendMessage(msg, worker);

@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-24 August 2022
+7 September 2023
 
  */
 
@@ -112,7 +112,7 @@ let QWorker = class {
       }
     };
 
-    this.onMessage = function(obj) {
+    this.onMessage = async function(obj) {
 
       lastActivityAt = Date.now();
       isActive = true;
@@ -128,6 +128,50 @@ let QWorker = class {
             error: error,
             originalMessage: obj
           });
+        }
+
+        if (typeof Bun !== 'undefined' && obj.qoper8.onStartupModule) {
+          let mod;
+          try {
+            let {onStartupModule} = await import(obj.qoper8.onStartupModule);
+            mod = onStartupModule;
+          }
+          catch(err) {
+            error = 'Unable to load onStartup customisation module ' + obj.qoper8.onStartupModule;
+            q.log(error);
+            q.log(JSON.stringify(err, Object.getOwnPropertyNames(err)));
+            q.emit('error', {
+              error: error,
+              caughtError: JSON.stringify(err, Object.getOwnPropertyNames(err))
+            });
+            return finished({
+              error: error,
+              caughtError: JSON.stringify(err, Object.getOwnPropertyNames(err)),
+              originalMessage: obj,
+              workerId: id
+            });
+          }
+
+          // onStartup customisation module loaded: now invoke it
+
+          try {
+            mod.call(q, obj.qoper8.onStartupArguments);
+          }
+          catch(err) {
+            error = 'Error running onStartup customisation module ' + obj.qoper8.onStartupModule;
+            q.log(error);
+            q.log(JSON.stringify(err, Object.getOwnPropertyNames(err)));
+            q.emit('error', {
+              error: error,
+              caughtError: JSON.stringify(err, Object.getOwnPropertyNames(err))
+            });
+            return finished({
+              error: error,
+              caughtError: JSON.stringify(err, Object.getOwnPropertyNames(err)),
+              originalMessage: obj,
+              workerId: id
+            });
+          }
         }
 
         id = obj.qoper8.id;
@@ -199,11 +243,21 @@ let QWorker = class {
       if (obj.type && handlersByMessageType.has(obj.type)) {
         if (!handlers.has(obj.type)) {
           let handlerUrl = handlersByMessageType.get(obj.type);
+          if (handlerUrl.module) {
+            handlerUrl = handlerUrl.module;
+          }
           q.log('fetching ' + handlerUrl);
           try {
-            importScripts(handlerUrl);
-            let handler = self.handler;
-            handlers.set(obj.type, handler);
+            let handlerFn;
+            if (typeof Bun !== 'undefined') {
+              let {handler} = await import(handlerUrl);
+              handlerFn = handler;
+            }
+            else {
+              importScripts(handlerUrl);
+              handlerFn = self.handler;
+            }
+            handlers.set(obj.type, handlerFn);
             q.emit('handler_imported', {handlerUrl: handlerUrl});
           }
           catch(err) {
