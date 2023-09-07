@@ -1,6 +1,6 @@
 (async () => {
 
-  const {QOper8} = await import('../../src/QOper8.js');
+  const {QOper8} = await import('../../src/QOper8.min.js');
 
   let qoper8 = new QOper8({
     logging: true,
