@@ -400,6 +400,13 @@ class QOper8 {
       processQueue();
     }
 
+    if (typeof Bun !== 'undefined' && this.logging) {
+      console.log('========================================================');
+      console.log('qoper8-ww Build ' + this.build + '; ' + this.buildDate + ' running in process ' + process.pid);
+      console.log('Max WebWorker Pool Size: ' + poolSize);
+      console.log('========================================================');
+    }
+
   }
 
   send(messageObj) {

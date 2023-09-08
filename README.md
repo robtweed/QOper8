@@ -448,6 +448,48 @@ It's entirely up to you.  Each WebWorker in your pool will be able to invoke you
 - If you use just a single WebWorker, your queued messages will be handled individually, one at a time, in strict chronological sequence.  This can be advantageous for certain kinds of activity where you need strict control over the serialisation of activities.  The downside is that the overall throughput will be typically less than if you had a larger WebWorker pool.
 
 
+## Optional WebWorker Initialisation/Customisation
+
+NOTE: This section only applies if you are using Bun.js
+
+*Qoper8-ww* initialises WebWorkers whenever it starts them up, but only to the extent needed by *QOper8-ww* itself.
+
+Whenever a new *QOper8-ww* WebWorker starts up, you may want/need to add your own custom initialisation logic, eg:
+
+- connecting the WebWorker to an external resource such as a database;
+- augmenting the *QOper8-ww* WebWorker's *this* context (which is then accessible to your message type handlers).  For example, adding methods etc to allow authorised access to an external resource such as a database.
+- adding logic that is invoked if the WebWorker is stopped, eg closing a database connection.
+
+**NOTE**: Although your Message Type Handlers have access to the *QOper8-ww this* context, for security reasons, they cannot make any changes to *this* that will persist between Handler invocations.  
+
+*QOper8-ww* therefore allows you to specify a Module that it will load whenever a new WebWorker is started and before any of your Handler Modules are invoked.
+
+You specify this via a property in the *options* object used when instantiating *QOper8-ww*:
+
+          onStartup: {
+            module: 'myStartupModule.js'
+          }
+
+### Structure of a QOper8-ww Startup/Initialisation Module
+  
+A *QOper8-ww* Startup/Initialisation Module should export a function as *{onStartupModule}*, eg:
+
+
+        let onStartupModule = function() {
+
+          // add any Child Process shutdown logic
+
+          this.on('stop', function() {
+            console.log('Child Process is about to be shut down by QOper8-cp');
+            // perform any resource disconnection/tear-down logic
+          });
+        };
+
+        export {onStartupModule};
+
+
+----
+
 ## *QOper8* Fault Resilience
 
 QOper8 is designed to be robust and allow you to control and handle unforseen events.
