@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-7 September 2023
+8 September 2023
 
  */
 
@@ -45,6 +45,9 @@ let QWorker = class {
     let timer = false;
     let lastActivityAt = Date.now();
     let noOfMessages = 0;
+
+    let path;
+    if (typeof Bun !== 'undefined') path = require('path');
 
     let shutdown = function() {
       // signal to master process that I'm to be shut down
@@ -133,7 +136,7 @@ let QWorker = class {
         if (typeof Bun !== 'undefined' && obj.qoper8.onStartupModule) {
           let mod;
           try {
-            let {onStartupModule} = await import(obj.qoper8.onStartupModule);
+            let {onStartupModule} = await import(path.resolve(process.cwd(), obj.qoper8.onStartupModule));
             mod = onStartupModule;
           }
           catch(err) {
@@ -250,7 +253,7 @@ let QWorker = class {
           try {
             let handlerFn;
             if (typeof Bun !== 'undefined') {
-              let {handler} = await import(handlerUrl);
+              let {handler} = await import(path.resolve(process.cwd(), handlerUrl));
               handlerFn = handler;
             }
             else {

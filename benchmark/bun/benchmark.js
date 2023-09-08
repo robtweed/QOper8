@@ -10,7 +10,7 @@ let q = new QOper8({
   poolSize: poolSize,
   workerInactivityLimit: 2,
   handlersByMessageType: new Map([
-    ['benchmark', '/home/pi/bun/benchMarkWorker.js']  // change filepath as appropriate
+    ['benchmark', 'benchMarkWorker.js']
   ])
 });
 

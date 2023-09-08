@@ -4,7 +4,7 @@ let qoper8 = new QOper8({
   logging: true,
   poolSize: 2,
   handlersByMessageType: new Map([
-    ['myMessage', '/home/pi/bun/myMessageHandler.js'] // change file path as appropriate
+    ['myMessage', 'myMessageHandler.js']
   ])
 });
 

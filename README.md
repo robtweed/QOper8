@@ -97,9 +97,9 @@ You start and configure QOper8 by creating an instance of the QOper8 class:
 
 - *poolSize*: the maximum number of WebWorker processes that QOper8 will start and run concurrently (Note that WebWorkers are started dynamically on demand.  If not specified, the poolSize will be 1: ie all messages will be handled by a single WebWorker
 
-- *handlersByMessageType*: a JavaScript Map of each message type to its respective handler method module URL.  Message types can be any string value
+- *handlersByMessageType*: a JavaScript Map of each message type to its respective handler method module URL/filepath.  Message types can be any string value
 
-  If you are using Bun.js, use the full filepath as the URL value.
+  If you are using Bun.js, the filepath should be relative to the folder in which you invoked the *bun* command.
 
 - *logging*: if set to *true*, QOper8 will generate console.log messages for each of its critical processing steps within both the main process and every WebWorker process.  This is useful for debugging during development.  If not specified, it is set to *false*.
 
@@ -393,7 +393,7 @@ If you now leave the web page alone, you'll see the messages generated when it p
           logging: true,
           poolSize: 2,
           handlersByMessageType: new Map([
-            ['myMessage', '/home/pi/bun/myMessageHandler.js']
+            ['myMessage', 'myMessageHandler.js']
           ])
         });
 
@@ -607,7 +607,7 @@ Note also that, under the terms of QOper8's Apache2 license, you use QOper8 at y
 
 The performance of *QOper8* will depend on many factors, in particular the size of your request and response objects, and also the amount and complexity of the processing logic within your WebWorker Handler methods.  It will also be impacted if your Handler logic includes access to external resources (eg via REST or other external networking APIs).
 
-However, to get an idea of likely best-case throughput performance of *QOper8* on a particular Browser, you can use the benchmarking test script that is included in the [*/benchmark*](./benchmark) folder of this repository.  
+However, to get an idea of likely best-case throughput performance of *QOper8* on a particular Browser, you can use the benchmarking test script that is included in the [*/benchmark/browser*](./benchmark/browser) folder of this repository.  
 
 This application allows you to specify the WebWorker Pool Size, and you then set up the parameters for generating a stream of identical messages that will be handled by a simple almost "do-nothing" message handler.  
 
@@ -638,12 +638,9 @@ The results can be pretty interesting, particularly comparing throughput for dif
 
 The performance of *QOper8* will depend on many factors, in particular the size of your request and response objects, and also the amount and complexity of the processing logic within your WebWorker Handler methods.  It will also be impacted if your Handler logic includes access to external resources.
 
-However, to get an idea of likely best-case throughput performance of *QOper8* with Bun.js, you can use the benchmarking test script that is included in the [*/bun/benchmark*](./bun/benchmark) folder of this repository.
+However, to get an idea of likely best-case throughput performance of *QOper8* with Bun.js, you can use the benchmarking test script that is included in the [*/benchmark/bun*](./benchmark/bun) folder of this repository.
 
-Copy the two files to a folder on your Bun.js system.  Change the path to the worker script file in
-the *benchmark.js* file.
-
-Run the benchmark using:
+Copy the two files to a folder on your Bun.js system and run the benchmark from that folder using the command:
 
       bun benchmark.js
 
