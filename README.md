@@ -680,29 +680,33 @@ The results can be pretty interesting, particularly comparing throughput for dif
 
 The performance of *QOper8* will depend on many factors, in particular the size of your request and response objects, and also the amount and complexity of the processing logic within your WebWorker Handler methods.  It will also be impacted if your Handler logic includes access to external resources.
 
-However, to get an idea of likely best-case throughput performance of *QOper8* with Bun.js, you can use the benchmarking test script that is included in the [*/benchmark/bun*](./benchmark/bun) folder of this repository.
+However, to get an idea of likely best-case throughput performance of *QOper8* with Bun.js, you can use the Bun-specific benchmarking script files that are included in the repository.
 
-Copy the two files to a folder on your Bun.js system and run the benchmark from that folder using the command:
+To run a benchmark test, simply create a file in your Bun run-time folder such as this:
 
-      bun benchmark.js
+        import {benchmark} from 'qoper8-ww/bunbenchmark';
+
+        benchmark({
+          poolSize: 3,
+          maxMessages: 100000,
+          blockLength:1000,
+          delay: 135
+        });
 
 
-The script allows you to specify the WebWorker Pool Size, and you then set up the parameters for generating a stream of identical messages that will be handled by a simple almost "do-nothing" message handler. Simply edit the
-appropriate values at the top of the *benchmark.js* file.
+As you can see from this example, you specify the WebWorker Pool Size and a set of parameters for generating a stream of identical messages that will be handled by a simple almost "do-nothing" message handler. Simply edit the
+appropriate values and save this file as *benchmark.js*.
 
 You specify the total number of messages you want to generate, eg 100,000, but rather than the script simply adding the whole lot to the QOper8 queue in one go, you define how to generate batches of messages that get added to the queue.  So you define:
 
-- the batch size (*blockLength*), eg 300 messages at a time
-- the delay time between batches (*delay*), eg 20ms
+- the batch size (*blockLength*), eg 1000 messages at a time
+- the delay time between batches (*delay*), eg 135ms
 
-This avoids the performance overheads of JavaScript handling a potentially massive array which could potententially adversely affect the performance throughput.  
+This avoids the performance overheads of JavaScript handling a potentially massive array which could potententially adversely affect the performance throughput.
 
 The trick is to create a balance of batch size and delay to maintain a sustainably-sized queue.  The application reports its work and results to the browser's JavaScript console, and will tell you if the queue increases with each message batch, or if the queue is exhausted between batches.
 
-Keep tweaking the delay time:
-
-- increase it if the queue keeps expanding with each new batch
-- decrease it if the queue is getting exhausted at each batch
+The benchmark script will automatically adjust the delay time up or down by a millisecond if either the queue length increases or is consumed before the next block is generated.  However, the closer you can pre-specify the delay time, the more optimal will be your throughput.
 
 At the end of each run, the script will display:
 
