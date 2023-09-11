@@ -39,6 +39,7 @@ function handleResponse(res, responseNo, workerId) {
       }
       console.log(' ');
       console.log('===========================');
+      q.stop();
     }
   }
 };
