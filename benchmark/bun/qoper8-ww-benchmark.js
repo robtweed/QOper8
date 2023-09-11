@@ -1,4 +1,8 @@
 import {QOper8} from 'qoper8-ww';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 let benchmark = function(options) {
@@ -11,7 +15,7 @@ let benchmark = function(options) {
   let q = new QOper8({
     logging: logging,
     handlersByMessageType: new Map([
-      ['benchmark', 'benchmarkWorker.js']
+      ['benchmark', __dirname + '/benchmarkWorker.js']
     ]),
     poolSize: poolSize,
   });
@@ -37,7 +41,7 @@ let benchmark = function(options) {
         console.log(responseNo + ' messages: ' + elapsed + ' sec');
         console.log('Processing rate: ' + rate + ' message/sec');
         for (let id = 0; id < poolSize; id++) {
-          console.log('Worker Thread ' + id + ': ' + messageCountByWorker[id] + ' messages handled');
+          console.log('WebWorker ' + id + ': ' + messageCountByWorker[id] + ' messages handled');
         }
         console.log(' ');
         console.log('===========================');
