@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-8 September 2023
+18 September 2023
 
  */
 
@@ -56,8 +56,8 @@ class QOper8 {
     if (obj.workerInactivityLimit) obj.workerInactivityLimit = obj.workerInactivityLimit * 60000;
 
     this.name = 'QOper8';
-    this.build = '3.1';
-    this.buildDate = '8 September 2023';
+    this.build = '3.2';
+    this.buildDate = '18 September 2023';
     this.logging = obj.logging || false;
     let poolSize = +obj.poolSize || 1;
     let maxPoolSize = obj.maxPoolSize || 32;
@@ -167,8 +167,9 @@ class QOper8 {
 
     function sendMessageToWorker(worker) {
       if (queue.length === 0) return;
-      let requestObj = queue.shift();
       let id = +worker.id;
+      isAvailable.set(id, false);
+      let requestObj = queue.shift();
       let pendingRecord = {
         messageNo: requestObj.qoper8.messageNo,
         request: requestObj,
@@ -177,7 +178,6 @@ class QOper8 {
       pendingRequests.set(id, pendingRecord);
       delete requestObj.qoper8.callback;
       delete requestObj.qoper8.messageNo;
-      isAvailable.set(+id, false);
 
       if (handlerTimeout) {
         let timer = setTimeout(function() {
@@ -274,9 +274,9 @@ class QOper8 {
               if (callback) callback(res, id);
             }
 
-            isAvailable.set(id, true);
             q.emit('worker' + id + 'Available');
             clearTimeout(handlerTimers.get(id));
+            isAvailable.set(id, true);
 
             if (res.error && res.shutdown) {
               workers.delete(id);
@@ -290,8 +290,8 @@ class QOper8 {
             }
 
             pendingRequests.delete(id);
+            handlerTimers.delete(id);
             isAvailable.set(id, true);
-            handlerTimers.delete(id)
             if (!stopped) processQueue();
           }
           else if (res.qoper8.shutdown) {
